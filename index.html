@@ -133,6 +133,23 @@
                         </div>
                     </div>
 
+                    <!-- Quét nhanh điều chỉnh tồn kho -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng (Quét QR)</h3>
+                            <p class="text-sm text-gray-500 mt-1">Quét mã QR của sản phẩm để cộng (+) hoặc trừ (-) số lượng tồn kho ngay lập tức.</p>
+                        </div>
+                        <button onclick="app.openScanner('quick-adjust')" class="w-full sm:w-auto px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-qrcode"></i> Bật máy quét
+                        </button>
+                    </div>
+
+                    <!-- Lịch sử thao tác quét (Local) -->
+                    <div id="quickActionHistory" class="bg-blue-50 border border-blue-100 rounded-xl p-4 hidden">
+                        <h4 class="text-sm font-bold text-blue-800 mb-2"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Lịch sử điều chỉnh gần nhất</h4>
+                        <ul id="quickActionList" class="text-sm text-gray-600 space-y-1 max-h-32 overflow-y-auto no-scrollbar"></ul>
+                    </div>
+
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                             <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-list"></i> Danh sách mặt hàng</h3>
@@ -387,7 +404,28 @@
             </div>
         </div>
     </div>
-
+<!-- Quick Adjust Modal -->
+    <div id="quickAdjustModal" class="fixed inset-0 bg-black/50 z-[85] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6" id="quickAdjustContent">
+            <h3 class="font-bold text-xl text-gray-800 mb-1" id="quickAdjustTitle">Mã SP</h3>
+            <p class="text-gray-500 mb-6 text-sm" id="quickAdjustName">Tên SP</p>
+            
+            <input type="hidden" id="quickAdjustId">
+            <input type="hidden" id="quickAdjustCurrentQty">
+            
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <button onclick="app.submitQuickAdjust(-1)" class="w-12 h-12 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xl font-bold transition-colors">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+                <input type="number" id="quickAdjustAmount" value="1" min="1" class="w-24 text-center px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-bold">
+                <button onclick="app.submitQuickAdjust(1)" class="w-12 h-12 rounded-full bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center text-xl font-bold transition-colors">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+            
+            <button onclick="app.closeQuickAdjust()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy & Đóng</button>
+        </div>
+    </div>
     <!-- Scanner Modal -->
     <div id="scannerModal" class="fixed inset-0 bg-black/90 z-[80] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 mx-4" id="scannerModalContent">
@@ -479,20 +517,22 @@
             }
 
             checkLogin() {
-                const storedUser = localStorage.getItem('wms_logged_email');
+                const isLogged = sessionStorage.getItem('wms_logged_in');
                 document.getElementById('loading-screen').style.display = 'none';
                 
-                if(!storedUser) {
+                if(!isLogged) {
                     document.getElementById('login-container').classList.remove('hidden');
                     document.getElementById('login-container').style.display = 'flex';
                     document.getElementById('app-container').style.display = 'none';
+                    // Ẩn nút đăng ký đi vì dùng admin cứng
+                    document.getElementById('toggleAuthBtn').parentElement.style.display = 'none'; 
                 } else {
                     document.getElementById('login-container').classList.add('hidden');
                     document.getElementById('login-container').style.display = 'none';
                     document.getElementById('app-container').style.display = 'flex';
                     
-                    // Tạo một user ID ảo dựa trên account
-                    this.userId = btoa(storedUser).replace(/=/g, '');
+                    // Dùng một ID cố định cho admin
+                    this.userId = 'admin_wms_demo';
                     
                     this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
                     this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
@@ -502,70 +542,26 @@
                 }
             }
 
-            toggleAuthMode() {
-                this.isRegisterMode = !this.isRegisterMode;
-                const btn = document.getElementById('loginBtn');
-                const toggleBtn = document.getElementById('toggleAuthBtn');
-                const title = document.querySelector('#login-container h2');
-                const spanTxt = document.querySelector('#login-container .mt-4 span');
-
-                if (this.isRegisterMode) {
-                    title.innerText = 'Đăng ký Tài khoản';
-                    btn.innerText = 'Đăng ký & Đăng nhập';
-                    spanTxt.innerText = 'Đã có tài khoản?';
-                    toggleBtn.innerText = 'Đăng nhập ngay';
-                } else {
-                    title.innerText = 'Đăng nhập WMS';
-                    btn.innerText = 'Đăng nhập hệ thống';
-                    spanTxt.innerText = 'Chưa có tài khoản?';
-                    toggleBtn.innerText = 'Đăng ký ngay';
-                }
-            }
-
             async handleLogin(e) {
                 e.preventDefault();
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value.trim();
+                const u = document.getElementById('email').value.trim();
+                const p = document.getElementById('password').value.trim();
                 const btn = document.getElementById('loginBtn');
                 
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Xử lý...';
 
-                try {
-                    const encodedEmail = btoa(email).replace(/=/g, '');
-                    const authRef = ref(this.db, 'auth/' + encodedEmail);
-                    
-                    onValue(authRef, (snapshot) => {
-                        const userData = snapshot.val();
-                        
-                        if (this.isRegisterMode) {
-                            if (userData) {
-                                document.getElementById('loginError').innerText = 'Tài khoản này đã tồn tại!';
-                                document.getElementById('loginError').classList.remove('hidden');
-                                btn.disabled = false; btn.innerText = 'Đăng ký & Đăng nhập';
-                            } else {
-                                set(authRef, { email: email, password: btoa(password) });
-                                localStorage.setItem('wms_logged_email', email);
-                                this.checkLogin();
-                            }
-                        } else {
-                            if (userData && userData.password === btoa(password)) {
-                                localStorage.setItem('wms_logged_email', email);
-                                this.checkLogin();
-                            } else {
-                                document.getElementById('loginError').innerText = 'Tài khoản hoặc mật khẩu không đúng!';
-                                document.getElementById('loginError').classList.remove('hidden');
-                                btn.disabled = false; btn.innerText = 'Đăng nhập hệ thống';
-                            }
-                        }
-                    }, { onlyOnce: true });
-
-                } catch (err) {
-                    console.error(err);
-                    document.getElementById('loginError').innerText = 'Lỗi kết nối máy chủ.';
+                // Xác thực cứng
+                if(u === 'admin' && p === '123') {
+                    sessionStorage.setItem('wms_logged_in', 'true');
+                    document.getElementById('loginError').classList.add('hidden');
+                    this.checkLogin();
+                } else {
+                    document.getElementById('loginError').innerText = 'Tài khoản hoặc mật khẩu không đúng!';
                     document.getElementById('loginError').classList.remove('hidden');
-                    btn.disabled = false;
                 }
+                btn.disabled = false;
+                btn.innerText = 'Đăng nhập hệ thống';
             }
 
             logout() {
@@ -974,7 +970,8 @@
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
             }
 
-            openScanner() {
+            openScanner(target = 'serial') {
+                this.scanTarget = target; // 'serial' hoặc 'quick-adjust'
                 const modal = document.getElementById('scannerModal');
                 const content = document.getElementById('scannerModalContent');
                 
@@ -1001,9 +998,13 @@
                     { facingMode: "environment" }, 
                     config,
                     (decodedText) => {
-                        document.getElementById('productSerial').value = decodedText;
-                        UI.showToast("Quét mã QR thành công!");
                         this.closeScanner();
+                        if (this.scanTarget === 'quick-adjust') {
+                            this.processQuickAdjustScan(decodedText);
+                        } else {
+                            document.getElementById('productSerial').value = decodedText;
+                            UI.showToast("Quét mã QR thành công!");
+                        }
                     },
                     (errorMessage) => { }
                 ).catch(err => {
@@ -1029,6 +1030,85 @@
                 setTimeout(() => {
                     modal.classList.add('hidden');
                 }, 300);
+            }
+
+            // Logic Quét QR để Điều chỉnh số lượng
+            processQuickAdjustScan(qrCode) {
+                // Tìm sản phẩm có mã Barcode hoặc mã Serial trùng khớp với QR
+                const product = this.products.find(p => p.barcode === qrCode || p.serial === qrCode || p.code === qrCode);
+                
+                if (!product) {
+                    UI.showToast(`Không tìm thấy sản phẩm có mã: ${qrCode}`, "error");
+                    return;
+                }
+
+                if (product.trackQuantity === false) {
+                    UI.showToast("Sản phẩm này đang không bật Quản lý tồn kho!", "error");
+                    return;
+                }
+
+                document.getElementById('quickAdjustId').value = product.id;
+                document.getElementById('quickAdjustCurrentQty').value = product.quantity;
+                document.getElementById('quickAdjustTitle').innerText = product.code || 'SP';
+                document.getElementById('quickAdjustName').innerText = product.name;
+                document.getElementById('quickAdjustAmount').value = 1;
+
+                const m = document.getElementById('quickAdjustModal'); 
+                const c = document.getElementById('quickAdjustContent');
+                m.classList.remove('hidden'); void m.offsetWidth;
+                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+            }
+
+            closeQuickAdjust() {
+                const m = document.getElementById('quickAdjustModal'); 
+                const c = document.getElementById('quickAdjustContent');
+                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            async submitQuickAdjust(multiplier) {
+                const id = document.getElementById('quickAdjustId').value;
+                const currentQty = parseInt(document.getElementById('quickAdjustCurrentQty').value, 10);
+                const amount = parseInt(document.getElementById('quickAdjustAmount').value, 10);
+                const p = this.products.find(x => x.id === id);
+                
+                if (!p || isNaN(amount) || amount < 1) return;
+
+                let newQty = currentQty + (amount * multiplier);
+                if (newQty < 0) newQty = 0; // Không cho âm tồn kho
+
+                try {
+                    await update(ref(this.db, 'users/' + this.userId + '/products/' + id), { 
+                        quantity: newQty,
+                        updatedAt: new Date().toISOString()
+                    });
+                    
+                    const actionTxt = multiplier === 1 ? 'Cộng (+)' : 'Trừ (-)';
+                    const colorTxt = multiplier === 1 ? 'text-green-600' : 'text-red-600';
+                    UI.showToast(`Đã ${actionTxt} ${amount} sản phẩm ${p.name}`);
+                    this.addQuickHistory(`<strong>${p.code || p.name}</strong>: <span class="${colorTxt} font-bold">${actionTxt} ${amount}</span> (Còn: ${newQty})`);
+                    
+                    this.closeQuickAdjust();
+                } catch (error) {
+                    UI.showToast("Lỗi khi cập nhật tồn kho", "error");
+                }
+            }
+
+            addQuickHistory(htmlMsg) {
+                const container = document.getElementById('quickActionHistory');
+                const list = document.getElementById('quickActionList');
+                container.classList.remove('hidden');
+                
+                const time = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="text-xs text-gray-400 mr-2">[${time}]</span> ${htmlMsg}`;
+                
+                list.insertBefore(li, list.firstChild);
+                
+                // Giữ lại 5 lịch sử gần nhất
+                if (list.children.length > 5) {
+                    list.removeChild(list.lastChild);
+                }
             }
         }
 
