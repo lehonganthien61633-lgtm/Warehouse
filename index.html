@@ -126,7 +126,6 @@
             </div>
 
             <!-- VIEW: PRODUCTS -->
-            <!-- VIEW: PRODUCTS -->
             <div id="view-products" class="hidden space-y-4">
                 <!-- Toolbar -->
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -219,7 +218,7 @@
             </div>
 
         </div>
-   </main>
+    </main>
 
     <!-- Product Modal -->
     <div id="productModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 overflow-y-auto">
@@ -366,9 +365,12 @@
 
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Firebase & Logic script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, onValue, push, update, remove, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        
         // UI Utilities
         const UI = {
             formatCurrency: (amount) => {
@@ -386,7 +388,6 @@
                 
                 container.appendChild(toast);
                 
-                // Animate in
                 requestAnimationFrame(() => {
                     toast.classList.remove('toast-enter');
                     toast.classList.add('toast-enter-active');
@@ -403,458 +404,460 @@
         // Application Logic
         class WMSApp {
             constructor() {
-            this.products = [];
-            this.categories = [];
-            this.brands = [];
-            this.searchQuery = '';
-            this.currentView = 'dashboard';
-            this.db = null;
-            this.userId = null;
-            this.productsRef = null;
-            this.categoriesRef = null;
-            this.brandsRef = null;
-            this.deleteCandidateId = null;
-            this.deleteCandidateType = null;
-
-            this.initFirebase();
-            this.bindEvents();
-        }
-
-        async initFirebase() {
-            try {
-                const firebaseConfig = {
-                    databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/"
-                };
-                const app = initializeApp(firebaseConfig);
-                this.db = getDatabase(app);
-
-                this.userId = localStorage.getItem('wms_user_id');
-                if (!this.userId) {
-                    this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('wms_user_id', this.userId);
-                }
-                
-                this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
-                this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
-                this.brandsRef = ref(this.db, 'users/' + this.userId + '/brands');
-                
-                this.listenToData();
-            } catch (error) {
-                console.error("Init Error:", error);
-            }
-        }
-
-        listenToData() {
-            onValue(this.productsRef, (snapshot) => {
                 this.products = [];
-                snapshot.forEach((child) => this.products.push({ id: child.key, ...child.val() }));
-                if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
-                if(this.currentView !== 'categories') this.render();
-            });
-
-            onValue(this.categoriesRef, (snapshot) => {
                 this.categories = [];
-                snapshot.forEach((child) => this.categories.push({ id: child.key, ...child.val() }));
-                this.populateDropdowns();
-                if(this.currentView === 'categories') this.renderCategories();
-            });
-
-            onValue(this.brandsRef, (snapshot) => {
                 this.brands = [];
-                snapshot.forEach((child) => this.brands.push({ id: child.key, ...child.val() }));
-                this.populateDropdowns();
-                if(this.currentView === 'categories') this.renderCategories();
-            });
-        }
+                this.searchQuery = '';
+                this.currentView = 'dashboard';
+                this.db = null;
+                this.userId = null;
+                this.productsRef = null;
+                this.categoriesRef = null;
+                this.brandsRef = null;
+                this.deleteCandidateId = null;
+                this.deleteCandidateType = null;
 
-        bindEvents() {
-            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-                document.getElementById('sidebarNav').classList.toggle('hidden');
-            });
+                this.initFirebase();
+                this.bindEvents();
+            }
 
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                this.searchQuery = e.target.value.toLowerCase();
-                this.renderProducts();
-            });
+            async initFirebase() {
+                try {
+                    const firebaseConfig = {
+                        databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/"
+                    };
+                    const app = initializeApp(firebaseConfig);
+                    this.db = getDatabase(app);
 
-            document.getElementById('productForm').addEventListener('submit', (e) => this.handleSaveProduct(e));
-            document.getElementById('catBrandForm').addEventListener('submit', (e) => this.handleSaveCatBrand(e));
-
-            // Modals Outside Click
-            document.getElementById('productModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeModal(); });
-            document.getElementById('confirmModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeConfirmModal(); });
-            document.getElementById('catBrandModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeCatBrandModal(); });
-            
-            document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.executeDelete());
-
-            // Auto-generate code when picking a category (for NEW products)
-            document.getElementById('productCategory').addEventListener('change', (e) => {
-                const id = document.getElementById('productId').value;
-                if (!id && e.target.value) {
-                    const catObj = this.categories.find(c => c.id === e.target.value);
-                    if(catObj) {
-                        document.getElementById('productCode').value = this.generateProductCode(catObj.prefix);
-                        document.getElementById('productBarcode').value = this.generateBarcode();
+                    this.userId = localStorage.getItem('wms_user_id');
+                    if (!this.userId) {
+                        this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                        localStorage.setItem('wms_user_id', this.userId);
                     }
+                    
+                    this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
+                    this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
+                    this.brandsRef = ref(this.db, 'users/' + this.userId + '/brands');
+                    
+                    this.listenToData();
+                } catch (error) {
+                    console.error("Init Error:", error);
                 }
-            });
+            }
 
-            // Toggle quantity track
-            document.getElementById('toggleQuantity').addEventListener('change', (e) => {
-                const qtyInput = document.getElementById('productQuantity');
-                qtyInput.disabled = !e.target.checked;
-                if(!e.target.checked) qtyInput.value = 1;
-            });
-        }
+            listenToData() {
+                onValue(this.productsRef, (snapshot) => {
+                    this.products = [];
+                    snapshot.forEach((child) => this.products.push({ id: child.key, ...child.val() }));
+                    if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
+                    if(this.currentView !== 'categories') this.render();
+                });
 
-            // Thuật toán 1: Mã sản phẩm = 2 ký tự prefix + 4 ký tự Alphanumeric ngẫu nhiên
+                onValue(this.categoriesRef, (snapshot) => {
+                    this.categories = [];
+                    snapshot.forEach((child) => this.categories.push({ id: child.key, ...child.val() }));
+                    this.populateDropdowns();
+                    if(this.currentView === 'categories') this.renderCategories();
+                });
+
+                onValue(this.brandsRef, (snapshot) => {
+                    this.brands = [];
+                    snapshot.forEach((child) => this.brands.push({ id: child.key, ...child.val() }));
+                    this.populateDropdowns();
+                    if(this.currentView === 'categories') this.renderCategories();
+                });
+            }
+
+            bindEvents() {
+                document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                    document.getElementById('sidebarNav').classList.toggle('hidden');
+                });
+
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchQuery = e.target.value.toLowerCase();
+                    this.renderProducts();
+                });
+
+                document.getElementById('productForm').addEventListener('submit', (e) => this.handleSaveProduct(e));
+                document.getElementById('catBrandForm').addEventListener('submit', (e) => this.handleSaveCatBrand(e));
+
+                // Modals Outside Click
+                document.getElementById('productModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeModal(); });
+                document.getElementById('confirmModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeConfirmModal(); });
+                document.getElementById('catBrandModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeCatBrandModal(); });
+                
+                document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.executeDelete());
+
+                // Auto-generate code when picking a category (for NEW products)
+                document.getElementById('productCategory').addEventListener('change', (e) => {
+                    const id = document.getElementById('productId').value;
+                    if (!id && e.target.value) {
+                        const catObj = this.categories.find(c => c.id === e.target.value);
+                        if(catObj) {
+                            document.getElementById('productCode').value = this.generateProductCode(catObj.prefix);
+                            document.getElementById('productBarcode').value = this.generateBarcode();
+                        }
+                    }
+                });
+
+                // Toggle quantity track
+                document.getElementById('toggleQuantity').addEventListener('change', (e) => {
+                    const qtyInput = document.getElementById('productQuantity');
+                    qtyInput.disabled = !e.target.checked;
+                    if(!e.target.checked) qtyInput.value = 1;
+                });
+            }
+
             generateProductCode(prefix) {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let randomStr = '';
-            for (let i = 0; i < 4; i++) randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
-            return `${prefix.toUpperCase()}${randomStr}`;
-        }
-
-        generateBarcode() {
-            let barcode = '';
-            for(let i = 0; i < 12; i++) barcode += Math.floor(Math.random() * 10).toString();
-            return barcode;
-        }
-
-        populateDropdowns() {
-            const catSelect = document.getElementById('productCategory');
-            const brandSelect = document.getElementById('productBrand');
-            catSelect.innerHTML = '<option value="" disabled selected>Chọn phân loại...</option>';
-            this.categories.forEach(c => catSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.prefix})</option>`);
-            brandSelect.innerHTML = '<option value="">Chọn hãng...</option>';
-            this.brands.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`);
-        }
-
-        switchView(viewName) {
-            this.currentView = viewName;
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'text-white');
-                btn.classList.add('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
-            });
-            const activeBtn = document.getElementById(`nav-${viewName}`);
-            if(activeBtn) {
-                activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
-                activeBtn.classList.add('bg-blue-600', 'text-white');
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let randomStr = '';
+                for (let i = 0; i < 4; i++) randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+                return `${prefix.toUpperCase()}${randomStr}`;
             }
 
-            ['dashboard', 'products', 'categories'].forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                if(el) el.classList.add('hidden');
-            });
-            const showEl = document.getElementById(`view-${viewName}`);
-            if(showEl) showEl.classList.remove('hidden');
+            generateBarcode() {
+                let barcode = '';
+                for(let i = 0; i < 12; i++) barcode += Math.floor(Math.random() * 10).toString();
+                return barcode;
+            }
 
-            const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Phân loại & Hãng' };
-            document.getElementById('pageTitle').innerText = titles[viewName] || 'WMS';
+            populateDropdowns() {
+                const catSelect = document.getElementById('productCategory');
+                const brandSelect = document.getElementById('productBrand');
+                catSelect.innerHTML = '<option value="" disabled selected>Chọn phân loại...</option>';
+                this.categories.forEach(c => catSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.prefix})</option>`);
+                brandSelect.innerHTML = '<option value="">Chọn hãng...</option>';
+                this.brands.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`);
+            }
 
-            this.render();
-            if(window.innerWidth < 768) document.getElementById('sidebarNav').classList.add('hidden');
-        }
+            switchView(viewName) {
+                this.currentView = viewName;
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
+                });
+                const activeBtn = document.getElementById(`nav-${viewName}`);
+                if(activeBtn) {
+                    activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
+                    activeBtn.classList.add('bg-blue-600', 'text-white');
+                }
 
-        render() {
-            if (this.currentView === 'dashboard') this.renderDashboard();
-            else if (this.currentView === 'products') this.renderProducts();
-            else if (this.currentView === 'categories') this.renderCategories();
-        }
+                ['dashboard', 'products', 'categories'].forEach(v => {
+                    const el = document.getElementById(`view-${v}`);
+                    if(el) el.classList.add('hidden');
+                });
+                const showEl = document.getElementById(`view-${viewName}`);
+                if(showEl) showEl.classList.remove('hidden');
 
-        renderCategories() {
-            const catTbody = document.getElementById('categoriesTableBody');
-            const brandTbody = document.getElementById('brandsTableBody');
-            
-            catTbody.innerHTML = '';
-            this.categories.forEach(c => {
-                catTbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-6 py-3 font-semibold text-gray-800">${c.prefix}</td>
-                        <td class="px-6 py-3 text-gray-700">${c.name}</td>
-                        <td class="px-6 py-3 text-center">
-                            <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
-                        </td>
-                    </tr>`;
-            });
+                const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Phân loại & Hãng' };
+                document.getElementById('pageTitle').innerText = titles[viewName] || 'WMS';
 
-            brandTbody.innerHTML = '';
-            this.brands.forEach(b => {
-                brandTbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-6 py-3 text-gray-700">${b.name}</td>
-                        <td class="px-6 py-3 text-center">
-                            <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
-                        </td>
-                    </tr>`;
-            });
-        }
+                this.render();
+                if(window.innerWidth < 768) document.getElementById('sidebarNav').classList.add('hidden');
+            }
 
-        renderDashboard() {
-            let totalItems = 0; let totalValue = 0; let lowStockItems = [];
-            this.products.forEach(p => {
-                const qty = parseInt(p.quantity) || 0;
-                const trackQty = p.trackQuantity !== false;
+            render() {
+                if (this.currentView === 'dashboard') this.renderDashboard();
+                else if (this.currentView === 'products') this.renderProducts();
+                else if (this.currentView === 'categories') this.renderCategories();
+            }
+
+            renderCategories() {
+                const catTbody = document.getElementById('categoriesTableBody');
+                const brandTbody = document.getElementById('brandsTableBody');
                 
-                if(trackQty) totalItems += qty;
-                totalValue += (trackQty ? qty : 1) * (parseFloat(p.price) || 0);
-                
-                if (trackQty && qty < 10) lowStockItems.push(p);
-            });
-
-            document.getElementById('stat-total-items').innerText = totalItems.toLocaleString('vi-VN');
-            document.getElementById('stat-total-value').innerText = UI.formatCurrency(totalValue);
-            document.getElementById('stat-low-stock').innerText = lowStockItems.length;
-
-            const tbody = document.getElementById('lowStockTableBody');
-            const emptyState = document.getElementById('lowStockEmpty');
-            tbody.innerHTML = '';
-            
-            if (lowStockItems.length === 0) {
-                tbody.parentElement.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-            } else {
-                tbody.parentElement.classList.remove('hidden');
-                emptyState.classList.add('hidden');
-                lowStockItems.forEach(p => {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-red-50/50">
-                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-semibold">${p.code || ''}</td>
-                            <td class="px-6 py-3 border-t border-gray-100 text-sm">${p.name}</td>
-                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-bold text-red-600 text-right">${p.quantity}</td>
+                catTbody.innerHTML = '';
+                this.categories.forEach(c => {
+                    catTbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 border-b border-gray-100">
+                            <td class="px-6 py-3 font-semibold text-gray-800">${c.prefix}</td>
+                            <td class="px-6 py-3 text-gray-700">${c.name}</td>
+                            <td class="px-6 py-3 text-center">
+                                <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                            </td>
                         </tr>`;
                 });
-            }
-        }
 
-        renderProducts() {
-            const tbody = document.getElementById('productsTableBody');
-            const emptyState = document.getElementById('tableEmpty');
-            tbody.innerHTML = '';
-
-            const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.barcode || '').includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery));
-
-            if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
-                emptyState.classList.remove('hidden');
-                tbody.parentElement.classList.add('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-                tbody.parentElement.classList.remove('hidden');
-                
-                filtered.forEach(p => {
-                    const qty = parseInt(p.quantity) || 1;
-                    const catObj = this.categories.find(c => c.id === p.category);
-                    const brandObj = this.brands.find(b => b.id === p.brand);
-                    
-                    const catName = catObj ? catObj.name : 'Khác';
-                    const brandUI = brandObj ? `<br><span class="text-xs text-purple-600 font-semibold"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
-                    
-                    let metaInfo = '';
-                    if(p.model) metaInfo += `<span class="mr-2"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`;
-                    if(p.color) metaInfo += `<span class="mr-2"><i class="fa-solid fa-palette"></i> ${p.color}</span>`;
-                    if(p.serial) metaInfo += `<span class="mr-2"><i class="fa-solid fa-hashtag"></i> ${p.serial}</span>`;
-                    const metaUI = metaInfo ? `<div class="text-xs text-blue-500 mt-1">${metaInfo}</div>` : '';
-                    
-                    const barcodeUI = p.barcode ? `<div class="text-xs text-gray-400 mt-1 font-mono"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : '';
-                    
-                    const isTracked = p.trackQuantity !== false;
-                    const qtyUI = !isTracked ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
-
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 group">
-                            <td class="px-6 py-4 font-semibold text-gray-800 align-top">${p.code || ''}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600 align-top"><span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 whitespace-nowrap">${catName}</span>${brandUI}</td>
-                            <td class="px-6 py-4 font-medium text-gray-700">
-                                ${p.name}
-                                ${metaUI}
-                                ${barcodeUI}
-                            </td>
-                            <td class="px-6 py-4 text-right align-top">${qtyUI}</td>
-                            <td class="px-6 py-4 text-right font-medium text-blue-600 align-top">${UI.formatCurrency(p.price)}</td>
-                            <td class="px-6 py-4 text-center align-top">
-                                <div class="flex justify-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                                    <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
-                                </div>
+                brandTbody.innerHTML = '';
+                this.brands.forEach(b => {
+                    brandTbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 border-b border-gray-100">
+                            <td class="px-6 py-3 text-gray-700">${b.name}</td>
+                            <td class="px-6 py-3 text-center">
+                                <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                             </td>
                         </tr>`;
                 });
             }
-        }
 
-        openModal(id = null) {
-            document.getElementById('productForm').reset();
-            document.getElementById('productId').value = '';
-            document.getElementById('productCode').value = '';
-            document.getElementById('productBarcode').value = '';
-            
-            const tQCheckbox = document.getElementById('toggleQuantity');
-            const qInput = document.getElementById('productQuantity');
-            tQCheckbox.checked = true;
-            qInput.disabled = false;
-            qInput.value = ''; // Reset rỗng để placeholder hoạt động
-
-            if (id) {
-                document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
-                const p = this.products.find(x => x.id === id);
-                if(p) {
-                    document.getElementById('productId').value = p.id;
-                    document.getElementById('productCategory').value = p.category || '';
-                    document.getElementById('productBrand').value = p.brand || '';
-                    document.getElementById('productCode').value = p.code || '';
-                    document.getElementById('productBarcode').value = p.barcode || '';
-                    document.getElementById('productName').value = p.name || '';
-                    document.getElementById('productModel').value = p.model || '';
-                    document.getElementById('productSerial').value = p.serial || '';
-                    document.getElementById('productColor').value = p.color || '';
-                    document.getElementById('productPrice').value = p.price || 0;
-                    document.getElementById('productPurchaseDate').value = p.purchaseDate || '';
-                    document.getElementById('productPurchasePlace').value = p.purchasePlace || '';
+            renderDashboard() {
+                let totalItems = 0; let totalValue = 0; let lowStockItems = [];
+                this.products.forEach(p => {
+                    const qty = parseInt(p.quantity) || 0;
+                    const trackQty = p.trackQuantity !== false;
                     
-                    const isTracked = p.trackQuantity !== false;
-                    tQCheckbox.checked = isTracked;
-                    qInput.disabled = !isTracked;
-                    qInput.value = isTracked ? (p.quantity || 1) : 1;
-                }
-            } else {
-                document.getElementById('modalTitle').innerText = 'Thêm Sản Phẩm Mới';
-            }
+                    if(trackQty) totalItems += qty;
+                    totalValue += (trackQty ? qty : 1) * (parseFloat(p.price) || 0);
+                    
+                    if (trackQty && qty < 10) lowStockItems.push(p);
+                });
 
-            const m = document.getElementById('productModal'); const c = document.getElementById('productModalContent');
-            m.classList.remove('hidden'); void m.offsetWidth;
-            m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
-        }
+                document.getElementById('stat-total-items').innerText = totalItems.toLocaleString('vi-VN');
+                document.getElementById('stat-total-value').innerText = UI.formatCurrency(totalValue);
+                document.getElementById('stat-low-stock').innerText = lowStockItems.length;
 
-        closeModal() {
-            const m = document.getElementById('productModal'); const c = document.getElementById('productModalContent');
-            m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        async handleSaveProduct(e) {
-            e.preventDefault();
-            const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-            const id = document.getElementById('productId').value;
-            const category = document.getElementById('productCategory').value;
-            
-            let code = document.getElementById('productCode').value.toUpperCase().trim();
-            let barcode = document.getElementById('productBarcode').value.trim();
-            if (!id && !code) {
-                const catObj = this.categories.find(c => c.id === category);
-                code = this.generateProductCode(catObj ? catObj.prefix : 'KH');
-                barcode = this.generateBarcode();
-            }
-
-            const trackQuantity = document.getElementById('toggleQuantity').checked;
-            
-            // Xử lý logic số lượng (nếu tắt theo dõi -> mặc định 1)
-            let finalQty = 1;
-            if (trackQuantity) {
-                finalQty = parseInt(document.getElementById('productQuantity').value, 10);
-                if(isNaN(finalQty) || finalQty < 1) finalQty = 1; 
-            }
-
-            const productData = {
-                category,
-                brand: document.getElementById('productBrand').value,
-                code, barcode,
-                name: document.getElementById('productName').value.trim(),
-                model: document.getElementById('productModel').value.trim(),
-                serial: document.getElementById('productSerial').value.trim(),
-                color: document.getElementById('productColor').value.trim(),
-                price: parseFloat(document.getElementById('productPrice').value),
-                purchaseDate: document.getElementById('productPurchaseDate').value,
-                purchasePlace: document.getElementById('productPurchasePlace').value.trim(),
-                trackQuantity,
-                quantity: finalQty,
-                updatedAt: new Date().toISOString()
-            };
-
-            try {
-                if (this.products.some(p => p.code === code && p.id !== id)) {
-                    UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); return;
-                }
-                if (id) await update(ref(this.db, 'users/' + this.userId + '/products/' + id), productData);
-                else await set(push(this.productsRef), { ...productData, createdAt: new Date().toISOString() });
-                UI.showToast(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
-                this.closeModal();
-            } catch (error) {
-                UI.showToast("Có lỗi xảy ra khi lưu!", "error");
-            } finally {
-                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
-            }
-
-        openCatBrandModal(type) {
-            document.getElementById('catBrandForm').reset();
-            document.getElementById('catBrandType').value = type;
-            if(type === 'category') {
-                document.getElementById('catBrandModalTitle').innerText = 'Thêm Phân Loại';
-                document.getElementById('catPrefixContainer').classList.remove('hidden');
-                document.getElementById('catPrefix').setAttribute('required', 'true');
-            } else {
-                document.getElementById('catBrandModalTitle').innerText = 'Thêm Hãng Sản Xuất';
-                document.getElementById('catPrefixContainer').classList.add('hidden');
-                document.getElementById('catPrefix').removeAttribute('required');
-            }
-            const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
-            m.classList.remove('hidden'); void m.offsetWidth;
-            m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
-        }
-
-        closeCatBrandModal() {
-            const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
-            m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        async handleSaveCatBrand(e) {
-            e.preventDefault();
-            const type = document.getElementById('catBrandType').value;
-            const name = document.getElementById('catBrandName').value.trim();
-            const prefix = document.getElementById('catPrefix').value.trim().toUpperCase();
-            try {
-                if(type === 'category') {
-                    if(this.categories.some(c => c.prefix === prefix)) { UI.showToast("Mã viết tắt đã tồn tại!", "error"); return; }
-                    await set(push(this.categoriesRef), { name, prefix });
+                const tbody = document.getElementById('lowStockTableBody');
+                const emptyState = document.getElementById('lowStockEmpty');
+                tbody.innerHTML = '';
+                
+                if (lowStockItems.length === 0) {
+                    tbody.parentElement.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
                 } else {
-                    await set(push(this.brandsRef), { name });
+                    tbody.parentElement.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+                    lowStockItems.forEach(p => {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-red-50/50">
+                                <td class="px-6 py-3 border-t border-gray-100 text-sm font-semibold">${p.code || ''}</td>
+                                <td class="px-6 py-3 border-t border-gray-100 text-sm">${p.name}</td>
+                                <td class="px-6 py-3 border-t border-gray-100 text-sm font-bold text-red-600 text-right">${p.quantity}</td>
+                            </tr>`;
+                    });
                 }
-                UI.showToast("Thêm mới thành công!");
-                this.closeCatBrandModal();
-            } catch (error) { UI.showToast("Lỗi khi lưu!", "error"); }
+            }
+
+            renderProducts() {
+                const tbody = document.getElementById('productsTableBody');
+                const emptyState = document.getElementById('tableEmpty');
+                tbody.innerHTML = '';
+
+                const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.barcode || '').includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery));
+
+                if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
+                    emptyState.classList.remove('hidden');
+                    tbody.parentElement.classList.add('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    tbody.parentElement.classList.remove('hidden');
+                    
+                    filtered.forEach(p => {
+                        const qty = parseInt(p.quantity) || 1;
+                        const catObj = this.categories.find(c => c.id === p.category);
+                        const brandObj = this.brands.find(b => b.id === p.brand);
+                        
+                        const catName = catObj ? catObj.name : 'Khác';
+                        const brandUI = brandObj ? `<br><span class="text-xs text-purple-600 font-semibold"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
+                        
+                        let metaInfo = '';
+                        if(p.model) metaInfo += `<span class="mr-2"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`;
+                        if(p.color) metaInfo += `<span class="mr-2"><i class="fa-solid fa-palette"></i> ${p.color}</span>`;
+                        if(p.serial) metaInfo += `<span class="mr-2"><i class="fa-solid fa-hashtag"></i> ${p.serial}</span>`;
+                        const metaUI = metaInfo ? `<div class="text-xs text-blue-500 mt-1">${metaInfo}</div>` : '';
+                        
+                        const barcodeUI = p.barcode ? `<div class="text-xs text-gray-400 mt-1 font-mono"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : '';
+                        
+                        const isTracked = p.trackQuantity !== false;
+                        const qtyUI = !isTracked ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
+
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 group">
+                                <td class="px-6 py-4 font-semibold text-gray-800 align-top">${p.code || ''}</td>
+                                <td class="px-6 py-4 text-sm text-gray-600 align-top"><span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 whitespace-nowrap">${catName}</span>${brandUI}</td>
+                                <td class="px-6 py-4 font-medium text-gray-700">
+                                    ${p.name}
+                                    ${metaUI}
+                                    ${barcodeUI}
+                                </td>
+                                <td class="px-6 py-4 text-right align-top">${qtyUI}</td>
+                                <td class="px-6 py-4 text-right font-medium text-blue-600 align-top">${UI.formatCurrency(p.price)}</td>
+                                <td class="px-6 py-4 text-center align-top">
+                                    <div class="flex justify-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                    });
+                }
+            }
+
+            openModal(id = null) {
+                document.getElementById('productForm').reset();
+                document.getElementById('productId').value = '';
+                document.getElementById('productCode').value = '';
+                document.getElementById('productBarcode').value = '';
+                
+                const tQCheckbox = document.getElementById('toggleQuantity');
+                const qInput = document.getElementById('productQuantity');
+                tQCheckbox.checked = true;
+                qInput.disabled = false;
+                qInput.value = ''; // Reset rỗng để placeholder hoạt động
+
+                if (id) {
+                    document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
+                    const p = this.products.find(x => x.id === id);
+                    if(p) {
+                        document.getElementById('productId').value = p.id;
+                        document.getElementById('productCategory').value = p.category || '';
+                        document.getElementById('productBrand').value = p.brand || '';
+                        document.getElementById('productCode').value = p.code || '';
+                        document.getElementById('productBarcode').value = p.barcode || '';
+                        document.getElementById('productName').value = p.name || '';
+                        document.getElementById('productModel').value = p.model || '';
+                        document.getElementById('productSerial').value = p.serial || '';
+                        document.getElementById('productColor').value = p.color || '';
+                        document.getElementById('productPrice').value = p.price || 0;
+                        document.getElementById('productPurchaseDate').value = p.purchaseDate || '';
+                        document.getElementById('productPurchasePlace').value = p.purchasePlace || '';
+                        
+                        const isTracked = p.trackQuantity !== false;
+                        tQCheckbox.checked = isTracked;
+                        qInput.disabled = !isTracked;
+                        qInput.value = isTracked ? (p.quantity || 1) : 1;
+                    }
+                } else {
+                    document.getElementById('modalTitle').innerText = 'Thêm Sản Phẩm Mới';
+                }
+
+                const m = document.getElementById('productModal'); const c = document.getElementById('productModalContent');
+                m.classList.remove('hidden'); void m.offsetWidth;
+                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+            }
+
+            closeModal() {
+                const m = document.getElementById('productModal'); const c = document.getElementById('productModalContent');
+                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            async handleSaveProduct(e) {
+                e.preventDefault();
+                const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+                const id = document.getElementById('productId').value;
+                const category = document.getElementById('productCategory').value;
+                
+                let code = document.getElementById('productCode').value.toUpperCase().trim();
+                let barcode = document.getElementById('productBarcode').value.trim();
+                if (!id && !code) {
+                    const catObj = this.categories.find(c => c.id === category);
+                    code = this.generateProductCode(catObj ? catObj.prefix : 'KH');
+                    barcode = this.generateBarcode();
+                }
+
+                const trackQuantity = document.getElementById('toggleQuantity').checked;
+                
+                // Xử lý logic số lượng (nếu tắt theo dõi -> mặc định 1)
+                let finalQty = 1;
+                if (trackQuantity) {
+                    finalQty = parseInt(document.getElementById('productQuantity').value, 10);
+                    if(isNaN(finalQty) || finalQty < 1) finalQty = 1; 
+                }
+
+                const productData = {
+                    category,
+                    brand: document.getElementById('productBrand').value,
+                    code, barcode,
+                    name: document.getElementById('productName').value.trim(),
+                    model: document.getElementById('productModel').value.trim(),
+                    serial: document.getElementById('productSerial').value.trim(),
+                    color: document.getElementById('productColor').value.trim(),
+                    price: parseFloat(document.getElementById('productPrice').value),
+                    purchaseDate: document.getElementById('productPurchaseDate').value,
+                    purchasePlace: document.getElementById('productPurchasePlace').value.trim(),
+                    trackQuantity,
+                    quantity: finalQty,
+                    updatedAt: new Date().toISOString()
+                };
+
+                try {
+                    if (this.products.some(p => p.code === code && p.id !== id)) {
+                        UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); return;
+                    }
+                    if (id) await update(ref(this.db, 'users/' + this.userId + '/products/' + id), productData);
+                    else await set(push(this.productsRef), { ...productData, createdAt: new Date().toISOString() });
+                    UI.showToast(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
+                    this.closeModal();
+                } catch (error) {
+                    UI.showToast("Có lỗi xảy ra khi lưu!", "error");
+                } finally {
+                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
+                }
+            }
+
+            openCatBrandModal(type) {
+                document.getElementById('catBrandForm').reset();
+                document.getElementById('catBrandType').value = type;
+                if(type === 'category') {
+                    document.getElementById('catBrandModalTitle').innerText = 'Thêm Phân Loại';
+                    document.getElementById('catPrefixContainer').classList.remove('hidden');
+                    document.getElementById('catPrefix').setAttribute('required', 'true');
+                } else {
+                    document.getElementById('catBrandModalTitle').innerText = 'Thêm Hãng Sản Xuất';
+                    document.getElementById('catPrefixContainer').classList.add('hidden');
+                    document.getElementById('catPrefix').removeAttribute('required');
+                }
+                const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
+                m.classList.remove('hidden'); void m.offsetWidth;
+                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+            }
+
+            closeCatBrandModal() {
+                const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
+                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            async handleSaveCatBrand(e) {
+                e.preventDefault();
+                const type = document.getElementById('catBrandType').value;
+                const name = document.getElementById('catBrandName').value.trim();
+                const prefix = document.getElementById('catPrefix').value.trim().toUpperCase();
+                try {
+                    if(type === 'category') {
+                        if(this.categories.some(c => c.prefix === prefix)) { UI.showToast("Mã viết tắt đã tồn tại!", "error"); return; }
+                        await set(push(this.categoriesRef), { name, prefix });
+                    } else {
+                        await set(push(this.brandsRef), { name });
+                    }
+                    UI.showToast("Thêm mới thành công!");
+                    this.closeCatBrandModal();
+                } catch (error) { UI.showToast("Lỗi khi lưu!", "error"); }
+            }
+
+            requestDelete(id, type = 'product') {
+                this.deleteCandidateId = id; this.deleteCandidateType = type;
+                const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent');
+                m.classList.remove('hidden'); void m.offsetWidth;
+                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+            }
+
+            closeConfirmModal() {
+                this.deleteCandidateId = null; this.deleteCandidateType = null;
+                const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent');
+                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            async executeDelete() {
+                if(!this.deleteCandidateId) return;
+                const btn = document.getElementById('confirmDeleteBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                try {
+                    let path = 'products';
+                    if(this.deleteCandidateType === 'category') path = 'categories';
+                    if(this.deleteCandidateType === 'brand') path = 'brands';
+                    await remove(ref(this.db, 'users/' + this.userId + '/' + path + '/' + this.deleteCandidateId));
+                    UI.showToast("Đã xóa thành công");
+                    this.closeConfirmModal();
+                } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
+                finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
+            }
         }
 
-        requestDelete(id, type = 'product') {
-            this.deleteCandidateId = id; this.deleteCandidateType = type;
-            const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent');
-            m.classList.remove('hidden'); void m.offsetWidth;
-            m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
-        }
-
-        closeConfirmModal() {
-            this.deleteCandidateId = null; this.deleteCandidateType = null;
-            const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent');
-            m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        async executeDelete() {
-            if(!this.deleteCandidateId) return;
-            const btn = document.getElementById('confirmDeleteBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            try {
-                let path = 'products';
-                if(this.deleteCandidateType === 'category') path = 'categories';
-                if(this.deleteCandidateType === 'brand') path = 'brands';
-                await remove(ref(this.db, 'users/' + this.userId + '/' + path + '/' + this.deleteCandidateId));
-                UI.showToast("Đã xóa thành công");
-                this.closeConfirmModal();
-            } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
-            finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
-        }
-        }
         document.addEventListener('DOMContentLoaded', () => {
-        window.app = new WMSApp();
-    });
+            window.app = new WMSApp();
+        });
     </script>
 </body>
 </html>
+Ở bảng điều khiển có hiện thống kê giá trị tài sản với những sản phẩm không có check số lượng, và hiện 0 với những sản phẩm có check số lượng
