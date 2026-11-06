@@ -40,14 +40,14 @@
             
             <form id="loginForm" class="space-y-4">
                 <div class="text-left">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="admin@khohang.com">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tài khoản (Tên gian hàng)</label>
+                    <input type="text" id="email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="vd: cuahang123">
                 </div>
                 <div class="text-left relative">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
                     <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập mật khẩu...">
                 </div>
-                <div id="loginError" class="text-red-500 text-sm hidden font-medium text-left">Email hoặc mật khẩu không đúng!</div>
+                <div id="loginError" class="text-red-500 text-sm hidden font-medium text-left">Tài khoản hoặc mật khẩu không đúng!</div>
                 <button type="submit" id="loginBtn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-md">
                     Đăng nhập hệ thống
                 </button>
@@ -138,8 +138,8 @@
                             <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-list"></i> Danh sách mặt hàng</h3>
                         </div>
                         <div class="overflow-x-auto max-h-[400px] overflow-y-auto no-scrollbar relative">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-white sticky top-0 shadow-sm">
+                            <table class="w-full text-left border-collapse relative">
+                                <thead class="bg-white sticky top-0 shadow-sm z-10">
                                     <tr class="text-gray-500 text-sm border-b border-gray-100">
                                         <th class="px-6 py-3 font-medium">Mã SP</th>
                                         <th class="px-6 py-3 font-medium">Tên sản phẩm</th>
@@ -208,11 +208,11 @@
                             </div>
                             <div class="overflow-y-auto max-h-96">
                                 <table class="w-full text-left border-collapse">
-                                    <thead class="bg-white sticky top-0 shadow-sm">
+                                    <thead class="bg-white sticky top-0 shadow-sm z-10">
                                         <tr class="text-gray-500 text-sm border-b border-gray-100">
                                             <th class="px-6 py-3 font-medium">Mã (2 KT)</th>
                                             <th class="px-6 py-3 font-medium">Tên phân loại</th>
-                                            <th class="px-6 py-3 font-medium text-right">Thao tác</th>
+                                            <th class="px-6 py-3 font-medium text-right w-24">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody id="categoriesTableBody" class="divide-y divide-gray-100"></tbody>
@@ -227,10 +227,10 @@
                             </div>
                             <div class="overflow-y-auto max-h-96">
                                 <table class="w-full text-left border-collapse">
-                                    <thead class="bg-white sticky top-0 shadow-sm">
+                                    <thead class="bg-white sticky top-0 shadow-sm z-10">
                                         <tr class="text-gray-500 text-sm border-b border-gray-100">
                                             <th class="px-6 py-3 font-medium">Tên hãng</th>
-                                            <th class="px-6 py-3 font-medium text-right">Thao tác</th>
+                                            <th class="px-6 py-3 font-medium text-right w-24">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody id="brandsTableBody" class="divide-y divide-gray-100"></tbody>
@@ -411,8 +411,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // NHÚNG FIREBASE AUTH BỔ SUNG VÀO ĐÂY
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getDatabase, ref, onValue, push, update, remove, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
         
         const UI = {
@@ -451,7 +449,6 @@
                 this.currentView = 'dashboard';
                 
                 this.db = null;
-                this.auth = null;
                 this.userId = null;
                 this.productsRef = null;
                 this.categoriesRef = null;
@@ -472,8 +469,6 @@
                     const app = initializeApp(firebaseConfig);
                     this.db = getDatabase(app);
                     
-                    // Do dự án chỉ cấp URL Realtime DB nên ta sẽ mô phỏng việc xác thực thông qua Realtime DB 
-                    // thay vì dùng Authentication service để tránh lỗi thiếu API Key.
                     this.checkLogin();
 
                 } catch (error) { 
@@ -496,7 +491,7 @@
                     document.getElementById('login-container').style.display = 'none';
                     document.getElementById('app-container').style.display = 'flex';
                     
-                    // Tạo một user ID ảo dựa trên email mã hóa bằng base64 để tránh ký tự cấm của Firebase DB
+                    // Tạo một user ID ảo dựa trên account
                     this.userId = btoa(storedUser).replace(/=/g, '');
                     
                     this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
@@ -535,22 +530,17 @@
                 
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Xử lý...';
-                
-                // Do thiết lập Firebase hiện tại không có Auth API Key, chúng ta sử dụng cơ chế Login giả lập:
-                // Nếu đăng ký: Lưu email & pass vào node `auth` trên RTDB.
-                // Nếu đăng nhập: Kiểm tra email & pass trên RTDB.
 
                 try {
                     const encodedEmail = btoa(email).replace(/=/g, '');
                     const authRef = ref(this.db, 'auth/' + encodedEmail);
                     
-                    // Mô phỏng quá trình kiểm tra đăng nhập/đăng ký bằng Promise/Event
                     onValue(authRef, (snapshot) => {
                         const userData = snapshot.val();
                         
                         if (this.isRegisterMode) {
                             if (userData) {
-                                document.getElementById('loginError').innerText = 'Email này đã tồn tại!';
+                                document.getElementById('loginError').innerText = 'Tài khoản này đã tồn tại!';
                                 document.getElementById('loginError').classList.remove('hidden');
                                 btn.disabled = false; btn.innerText = 'Đăng ký & Đăng nhập';
                             } else {
@@ -563,7 +553,7 @@
                                 localStorage.setItem('wms_logged_email', email);
                                 this.checkLogin();
                             } else {
-                                document.getElementById('loginError').innerText = 'Email hoặc mật khẩu không đúng!';
+                                document.getElementById('loginError').innerText = 'Tài khoản hoặc mật khẩu không đúng!';
                                 document.getElementById('loginError').classList.remove('hidden');
                                 btn.disabled = false; btn.innerText = 'Đăng nhập hệ thống';
                             }
@@ -747,9 +737,9 @@
 
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-3 border-t border-gray-100 text-sm font-semibold">${p.code || ''}</td>
-                                <td class="px-6 py-3 border-t border-gray-100 text-sm">${p.name}</td>
-                                <td class="px-6 py-3 border-t border-gray-100 text-sm font-bold text-right">${qtyUI}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-semibold">${p.code || ''}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm">${p.name}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-bold text-right">${qtyUI}</td>
                             </tr>`;
                     });
                 }
@@ -781,7 +771,6 @@
                         const catName = catObj ? catObj.name : '';
                         const brandUI = brandObj ? `<span class="text-xs text-purple-600 font-semibold inline-block bg-purple-50 px-2 py-0.5 rounded border border-purple-100 ml-2"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
                         
-                        // Loại bỏ các sản phẩm không có thuộc tính phụ khỏi mảng hiển thị meta
                         let metaTags = [];
                         if (catName) metaTags.push(`<span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 whitespace-nowrap text-sm text-gray-600">${catName}</span>`);
                         if (brandUI) metaTags.push(brandUI);
