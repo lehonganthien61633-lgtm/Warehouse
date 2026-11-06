@@ -276,6 +276,17 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (S/N)</label>
+                        <input type="text" id="productSerial" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="S/N...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Màu sắc</label>
+                        <input type="text" id="productColor" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Đen, Trắng, Đỏ...">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mua</label>
                         <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
@@ -293,7 +304,7 @@
                             <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
-                    <input type="number" id="productQuantity" min="0" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400" placeholder="0">
+                    <input type="number" id="productQuantity" min="1" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400" placeholder="1">
                 </div>
 
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
@@ -667,7 +678,7 @@
             const emptyState = document.getElementById('tableEmpty');
             tbody.innerHTML = '';
 
-            const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.barcode || '').includes(this.searchQuery));
+            const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.barcode || '').includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery));
 
             if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
                 emptyState.classList.remove('hidden');
@@ -677,24 +688,36 @@
                 tbody.parentElement.classList.remove('hidden');
                 
                 filtered.forEach(p => {
-                    const qty = parseInt(p.quantity) || 0;
+                    const qty = parseInt(p.quantity) || 1;
                     const catObj = this.categories.find(c => c.id === p.category);
                     const brandObj = this.brands.find(b => b.id === p.brand);
                     
                     const catName = catObj ? catObj.name : 'Khác';
                     const brandUI = brandObj ? `<br><span class="text-xs text-purple-600 font-semibold"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
+                    
+                    let metaInfo = '';
+                    if(p.model) metaInfo += `<span class="mr-2"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`;
+                    if(p.color) metaInfo += `<span class="mr-2"><i class="fa-solid fa-palette"></i> ${p.color}</span>`;
+                    if(p.serial) metaInfo += `<span class="mr-2"><i class="fa-solid fa-hashtag"></i> ${p.serial}</span>`;
+                    const metaUI = metaInfo ? `<div class="text-xs text-blue-500 mt-1">${metaInfo}</div>` : '';
+                    
                     const barcodeUI = p.barcode ? `<div class="text-xs text-gray-400 mt-1 font-mono"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : '';
-                    const modelUI = p.model ? `<div class="text-xs text-blue-500 mt-1">Model: ${p.model}</div>` : '';
-                    const qtyUI = p.trackQuantity === false ? `<span class="text-gray-400 text-sm">Không quản lý</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
+                    
+                    const isTracked = p.trackQuantity !== false;
+                    const qtyUI = !isTracked ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
                     tbody.innerHTML += `
                         <tr class="hover:bg-gray-50 group">
-                            <td class="px-6 py-4 font-semibold text-gray-800">${p.code || ''}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600"><span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 whitespace-nowrap">${catName}</span>${brandUI}</td>
-                            <td class="px-6 py-4 font-medium text-gray-700">${p.name}${modelUI}${barcodeUI}</td>
-                            <td class="px-6 py-4 text-right">${qtyUI}</td>
-                            <td class="px-6 py-4 text-right font-medium text-blue-600">${UI.formatCurrency(p.price)}</td>
-                            <td class="px-6 py-4 text-center">
+                            <td class="px-6 py-4 font-semibold text-gray-800 align-top">${p.code || ''}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600 align-top"><span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 whitespace-nowrap">${catName}</span>${brandUI}</td>
+                            <td class="px-6 py-4 font-medium text-gray-700">
+                                ${p.name}
+                                ${metaUI}
+                                ${barcodeUI}
+                            </td>
+                            <td class="px-6 py-4 text-right align-top">${qtyUI}</td>
+                            <td class="px-6 py-4 text-right font-medium text-blue-600 align-top">${UI.formatCurrency(p.price)}</td>
+                            <td class="px-6 py-4 text-center align-top">
                                 <div class="flex justify-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
                                     <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
@@ -705,14 +728,17 @@
             }
         }
 
-        // Manage Modals
         openModal(id = null) {
             document.getElementById('productForm').reset();
             document.getElementById('productId').value = '';
             document.getElementById('productCode').value = '';
             document.getElementById('productBarcode').value = '';
-            document.getElementById('toggleQuantity').checked = true;
-            document.getElementById('productQuantity').disabled = false;
+            
+            const tQCheckbox = document.getElementById('toggleQuantity');
+            const qInput = document.getElementById('productQuantity');
+            tQCheckbox.checked = true;
+            qInput.disabled = false;
+            qInput.value = ''; // Reset rỗng để placeholder hoạt động
 
             if (id) {
                 document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
@@ -725,14 +751,16 @@
                     document.getElementById('productBarcode').value = p.barcode || '';
                     document.getElementById('productName').value = p.name || '';
                     document.getElementById('productModel').value = p.model || '';
+                    document.getElementById('productSerial').value = p.serial || '';
+                    document.getElementById('productColor').value = p.color || '';
                     document.getElementById('productPrice').value = p.price || 0;
                     document.getElementById('productPurchaseDate').value = p.purchaseDate || '';
                     document.getElementById('productPurchasePlace').value = p.purchasePlace || '';
                     
-                    const tQ = p.trackQuantity !== false;
-                    document.getElementById('toggleQuantity').checked = tQ;
-                    document.getElementById('productQuantity').disabled = !tQ;
-                    document.getElementById('productQuantity').value = tQ ? (p.quantity || 0) : 1;
+                    const isTracked = p.trackQuantity !== false;
+                    tQCheckbox.checked = isTracked;
+                    qInput.disabled = !isTracked;
+                    qInput.value = isTracked ? (p.quantity || 1) : 1;
                 }
             } else {
                 document.getElementById('modalTitle').innerText = 'Thêm Sản Phẩm Mới';
@@ -764,17 +792,27 @@
             }
 
             const trackQuantity = document.getElementById('toggleQuantity').checked;
+            
+            // Xử lý logic số lượng (nếu tắt theo dõi -> mặc định 1)
+            let finalQty = 1;
+            if (trackQuantity) {
+                finalQty = parseInt(document.getElementById('productQuantity').value, 10);
+                if(isNaN(finalQty) || finalQty < 1) finalQty = 1; 
+            }
+
             const productData = {
                 category,
                 brand: document.getElementById('productBrand').value,
                 code, barcode,
                 name: document.getElementById('productName').value.trim(),
                 model: document.getElementById('productModel').value.trim(),
+                serial: document.getElementById('productSerial').value.trim(),
+                color: document.getElementById('productColor').value.trim(),
                 price: parseFloat(document.getElementById('productPrice').value),
                 purchaseDate: document.getElementById('productPurchaseDate').value,
                 purchasePlace: document.getElementById('productPurchasePlace').value.trim(),
                 trackQuantity,
-                quantity: trackQuantity ? parseInt(document.getElementById('productQuantity').value, 10) : 0,
+                quantity: finalQty,
                 updatedAt: new Date().toISOString()
             };
 
@@ -791,7 +829,6 @@
             } finally {
                 btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
             }
-        }
 
         openCatBrandModal(type) {
             document.getElementById('catBrandForm').reset();
