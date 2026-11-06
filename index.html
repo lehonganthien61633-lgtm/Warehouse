@@ -14,8 +14,6 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        #app-container { display: none; }
-        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
@@ -41,7 +39,7 @@
                     <input type="text" id="username" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="vd: shop123">
                 </div>
                 <div class="text-left relative">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu (vd: 123)</label>
                     <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập mật khẩu...">
                 </div>
                 <div id="loginError" class="text-red-500 text-sm hidden font-medium text-left">Tài khoản hoặc mật khẩu không đúng!</div>
@@ -876,7 +874,7 @@
                                 <td class="px-6 py-4 text-right align-top w-32">${qtyUI}</td>
                                 <td class="px-6 py-4 text-right font-medium text-blue-600 align-top w-32">${UI.formatCurrency(p.price)}</td>
                                 <td class="px-6 py-4 text-right align-top w-24">
-                                    <div class="flex justify-end gap-2">
+                                    <div class="flex justify-end gap-2 opacity-100 transition-opacity">
                                         <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
                                         <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
