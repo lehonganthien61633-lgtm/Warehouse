@@ -6,7 +6,6 @@
     <title>Hệ thống Quản lý kho WMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .toast-enter { transform: translateX(100%); opacity: 0; }
@@ -15,18 +14,20 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #app-container { display: none; }
+        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
 
     <!-- VIEW: LOADING -->
-    <div id="loading-screen" class="w-full h-full flex-col items-center justify-center bg-slate-800 px-4 z-[100] fixed inset-0 flex">
+    <div id="loading-screen" class="w-full h-full flex-col items-center justify-center bg-slate-800 px-4 z-[100] fixed inset-0">
         <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
         <p class="text-gray-300 font-medium tracking-wide">Đang tải hệ thống...</p>
     </div>
 
     <!-- VIEW: LOGIN -->
-    <div id="login-container" class="w-full h-full flex-col items-center justify-center bg-slate-800 px-4 z-50 fixed inset-0 hidden">
+    <div id="login-container" class="w-full h-full flex flex-col items-center justify-center bg-slate-800 px-4 z-50 fixed inset-0 hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
             <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 <i class="fa-solid fa-boxes-stacked"></i>
@@ -36,11 +37,11 @@
             
             <form id="loginForm" class="space-y-4">
                 <div class="text-left">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tài khoản (admin)</label>
-                    <input type="text" id="username" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="vd: admin">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tài khoản (Tên gian hàng)</label>
+                    <input type="text" id="email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="vd: admin">
                 </div>
                 <div class="text-left relative">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu (123)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
                     <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập mật khẩu...">
                 </div>
                 <div id="loginError" class="text-red-500 text-sm hidden font-medium text-left">Tài khoản hoặc mật khẩu không đúng!</div>
@@ -48,6 +49,10 @@
                     Đăng nhập hệ thống
                 </button>
             </form>
+            <div class="mt-4 pt-4 border-t border-gray-100 text-sm">
+                <span class="text-gray-500">Chưa có tài khoản?</span>
+                <button onclick="app.toggleAuthMode()" id="toggleAuthBtn" class="text-blue-600 font-semibold ml-1 hover:underline">Đăng ký ngay</button>
+            </div>
         </div>
     </div>
 
@@ -74,8 +79,8 @@
                     <span class="font-medium">Quản lý sản phẩm</span>
                 </button>
                 <button onclick="app.switchView('categories')" id="nav-categories" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-                    <i class="fa-solid fa-tags w-5 text-center"></i>
-                    <span class="font-medium">Phân loại & Hãng</span>
+                    <i class="fa-solid fa-gear w-5 text-center"></i>
+                    <span class="font-medium">Thiết lập</span>
                 </button>
             </nav>
             <div class="p-4 text-xs border-t border-slate-700 hidden md:block">
@@ -125,39 +130,23 @@
                         </div>
                     </div>
 
-                    <!-- Quét nhanh điều chỉnh tồn kho -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div>
-                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng (Quét QR)</h3>
-                            <p class="text-sm text-gray-500 mt-1">Quét mã QR/Barcode của sản phẩm để cộng (+) hoặc trừ (-) số lượng tồn kho ngay lập tức.</p>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[500px]">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
+                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-list text-blue-500"></i> Danh sách mặt hàng</h3>
+                            <button onclick="app.switchView('products')" class="text-sm text-blue-600 font-medium hover:underline">Quản lý chi tiết</button>
                         </div>
-                        <button onclick="app.openScanner('quick-adjust')" class="w-full sm:w-auto px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-qrcode"></i> Bật máy quét
-                        </button>
-                    </div>
-
-                    <!-- Lịch sử thao tác quét -->
-                    <div id="quickActionHistory" class="bg-blue-50 border border-blue-100 rounded-xl p-4 hidden">
-                        <h4 class="text-sm font-bold text-blue-800 mb-2"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Lịch sử điều chỉnh gần nhất</h4>
-                        <ul id="quickActionList" class="text-sm text-gray-600 space-y-1 max-h-32 overflow-y-auto no-scrollbar"></ul>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-list"></i> Danh sách mặt hàng</h3>
-                        </div>
-                        <div class="overflow-x-auto max-h-[400px] overflow-y-auto no-scrollbar relative">
+                        <div class="overflow-auto flex-1 no-scrollbar p-0">
                             <table class="w-full text-left border-collapse relative">
                                 <thead class="bg-white sticky top-0 shadow-sm z-10">
                                     <tr class="text-gray-500 text-sm border-b border-gray-100">
-                                        <th class="px-6 py-3 font-medium">Mã SP</th>
-                                        <th class="px-6 py-3 font-medium">Tên sản phẩm</th>
-                                        <th class="px-6 py-3 font-medium text-right">Số lượng tồn</th>
+                                        <th class="px-6 py-3 font-medium bg-white">Mã SP</th>
+                                        <th class="px-6 py-3 font-medium bg-white">Tên sản phẩm</th>
+                                        <th class="px-6 py-3 font-medium text-right bg-white">Số lượng tồn</th>
                                     </tr>
                                 </thead>
-                                <tbody id="dashboardTableBody" class="divide-y divide-gray-100"></tbody>
+                                <tbody id="dashboardTableBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
                             </table>
-                            <div id="dashboardEmpty" class="hidden p-8 text-center text-gray-500">
+                            <div id="dashboardEmpty" class="hidden h-full flex flex-col items-center justify-center p-8 text-center text-gray-500">
                                 <i class="fa-solid fa-box-open text-4xl text-gray-300 mb-3"></i>
                                 <p>Kho hàng đang trống.</p>
                             </div>
@@ -187,11 +176,17 @@
                                         <th class="px-6 py-4 font-medium min-w-[300px]">Tên sản phẩm</th>
                                         <th class="px-6 py-4 font-medium text-right">Số lượng</th>
                                         <th class="px-6 py-4 font-medium text-right min-w-[120px]">Đơn giá</th>
-                                        <th class="px-6 py-4 font-medium text-right">Thao tác</th>
+                                        <th class="px-6 py-4 font-medium text-right w-24">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="productsTableBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
                             </table>
+                            
+                            <div id="tableLoading" class="p-12 text-center text-gray-400">
+                                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-3"></i>
+                                <p>Đang tải dữ liệu...</p>
+                            </div>
+
                             <div id="tableEmpty" class="hidden p-12 text-center text-gray-500">
                                 <i class="fa-solid fa-box-open text-5xl text-gray-300 mb-4"></i>
                                 <p class="text-lg font-medium">Không tìm thấy sản phẩm nào</p>
@@ -201,13 +196,15 @@
                     </div>
                 </div>
 
-                <!-- VIEW: CATEGORIES & BRANDS -->
+                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands, Locations) -->
                 <div id="view-categories" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <!-- Categories Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                                 <h3 class="font-bold text-gray-800"><i class="fa-solid fa-layer-group text-blue-500 mr-2"></i> Phân loại</h3>
-                                <button onclick="app.openCatBrandModal('category')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                                <button onclick="app.openConfigModal('category')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
                             </div>
                             <div class="overflow-y-auto max-h-96">
                                 <table class="w-full text-left border-collapse">
@@ -223,10 +220,11 @@
                             </div>
                         </div>
 
+                        <!-- Brands Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                                 <h3 class="font-bold text-gray-800"><i class="fa-solid fa-industry text-purple-500 mr-2"></i> Hãng sản xuất</h3>
-                                <button onclick="app.openCatBrandModal('brand')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                                <button onclick="app.openConfigModal('brand')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
                             </div>
                             <div class="overflow-y-auto max-h-96">
                                 <table class="w-full text-left border-collapse">
@@ -240,6 +238,26 @@
                                 </table>
                             </div>
                         </div>
+                        
+                        <!-- Location Table -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-location-dot text-red-500 mr-2"></i> Nơi lưu</h3>
+                                <button onclick="app.openConfigModal('location')" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="overflow-y-auto max-h-96">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-white sticky top-0 shadow-sm z-10">
+                                        <tr class="text-gray-500 text-sm border-b border-gray-100">
+                                            <th class="px-6 py-3 font-medium">Tên nơi lưu</th>
+                                            <th class="px-6 py-3 font-medium text-right w-24">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="locationsTableBody" class="divide-y divide-gray-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
                     </div>
                 </div>
 
@@ -249,25 +267,25 @@
 
     <!-- Modal: Thêm/Sửa Sản phẩm -->
     <div id="productModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 overflow-y-auto p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300 relative flex flex-col max-h-full" id="productModalContent">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300 relative flex flex-col max-h-[90vh]" id="productModalContent">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl sticky top-0 z-10 flex-shrink-0">
                 <h3 class="font-bold text-lg text-gray-800" id="modalTitle">Thêm Sản Phẩm Mới</h3>
-                <button onclick="app.closeModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                <button type="button" onclick="app.closeModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
             <div class="overflow-y-auto flex-1 p-6">
-                <form id="productForm" class="space-y-4">
+                <form id="productForm" class="space-y-4" onsubmit="return false;">
                     <input type="hidden" id="productId">
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Mã Sản Phẩm</label>
-                            <input type="text" id="productCode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono font-bold" placeholder="Tự động sinh">
-                        </div>
-                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Mã Barcode</label>
                             <input type="text" id="productBarcode" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono tracking-wide" placeholder="Nhập mã...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (S/N)</label>
+                            <input type="text" id="productSerial" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono tracking-wide" placeholder="S/N...">
                         </div>
                     </div>
 
@@ -279,57 +297,54 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Phân Loại *</label>
-                            <select id="productCategory" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <select id="productCategory" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
                                 <option value="" disabled selected>Chọn...</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Hãng Sản Xuất</label>
-                            <select id="productBrand" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                <option value="">Chọn...</option>
-                            </select>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mã Sản Phẩm</label>
+                            <input type="text" id="productCode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono font-bold text-sm" placeholder="Tự động sinh">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                            <input type="text" id="productModel" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="VD: XYZ-2026">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hãng Sản Xuất</label>
+                            <select id="productBrand" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
+                                <option value="">Chọn...</option>
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Màu sắc</label>
-                            <input type="text" id="productColor" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Đen, Trắng...">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                            <input type="text" id="productModel" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="VD: XYZ">
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Đơn Giá (VNĐ) *</label>
-                            <input type="number" id="productPrice" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0">
+                            <input type="number" id="productPrice" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="0">
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Màu sắc</label>
+                            <input type="text" id="productColor" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Đen, Trắng...">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mua</label>
                             <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nơi mua</label>
-                            <input type="text" id="productPurchasePlace" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Cửa hàng...">
-                        </div>
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Serial / QR Code</label>
-                            <div class="relative flex items-center">
-                                <input type="text" id="productSerial" class="w-full pl-3 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono tracking-wide" placeholder="Nhập / Quét mã QR...">
-                                <button type="button" onclick="app.openScanner('serial')" class="absolute right-1.5 p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded transition-colors" title="Quét Mã QR">
-                                    <i class="fa-solid fa-qrcode"></i>
-                                </button>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nơi lưu trữ</label>
+                            <select id="productPurchasePlace" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
+                                <option value="">Chọn nơi lưu...</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="border border-gray-200 p-4 rounded-lg bg-gray-50">
+                    <div class="border border-gray-200 p-4 rounded-lg bg-gray-50 mt-4">
                         <div class="flex items-center justify-between mb-2">
                             <label class="text-sm font-medium text-gray-700">Quản lý tồn kho (Số lượng)</label>
                             <label class="relative inline-flex items-center cursor-pointer">
@@ -337,44 +352,44 @@
                                 <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
-                        <input type="number" id="productQuantity" min="1" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400" placeholder="1">
+                        <input type="number" id="productQuantity" min="1" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400 text-center font-bold text-lg" placeholder="1">
                     </div>
                 </form>
             </div>
             <div class="px-6 py-4 border-t border-gray-100 bg-white rounded-b-xl flex justify-end gap-3 flex-shrink-0">
                 <button type="button" onclick="app.closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
-                <button type="button" id="saveBtn" onclick="app.handleSaveProduct(event)" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                <button type="button" id="saveBtn" onclick="app.handleSaveProduct()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
                     <i class="fa-solid fa-save"></i> Lưu
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Thêm Phân loại / Hãng -->
-    <div id="catBrandModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="catBrandModalContent">
+    <!-- Modal: Thiết lập chung (Thêm Phân loại / Hãng / Nơi lưu) -->
+    <div id="configModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="configModalContent">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                <h3 class="font-bold text-lg text-gray-800" id="catBrandModalTitle">Thêm mới</h3>
-                <button onclick="app.closeCatBrandModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                <h3 class="font-bold text-lg text-gray-800" id="configModalTitle">Thêm mới</h3>
+                <button type="button" onclick="app.closeConfigModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
-            <form id="catBrandForm" class="p-6 space-y-4">
-                <input type="hidden" id="catBrandType">
+            <form id="configForm" class="p-6 space-y-4" onsubmit="return false;">
+                <input type="hidden" id="configType">
                 
-                <div id="catPrefixContainer" class="hidden">
+                <div id="configPrefixContainer" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mã viết tắt (2 Ký tự) *</label>
-                    <input type="text" id="catPrefix" maxlength="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="VD: DT">
+                    <input type="text" id="configPrefix" maxlength="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="VD: DT">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tên hiển thị *</label>
-                    <input type="text" id="catBrandName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên...">
+                    <input type="text" id="configName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên...">
                 </div>
 
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
-                    <button type="button" onclick="app.closeCatBrandModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
-                    <button type="submit" id="catBrandSaveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <button type="button" onclick="app.closeConfigModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
+                    <button type="button" onclick="app.handleSaveConfig()" id="configSaveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
                         Lưu
                     </button>
                 </div>
@@ -391,54 +406,13 @@
             <h3 class="font-bold text-xl text-gray-800 mb-2">Xác nhận xóa?</h3>
             <p class="text-gray-500 mb-6 text-sm">Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa mục này khỏi hệ thống?</p>
             <div class="flex justify-center gap-3">
-                <button onclick="app.closeConfirmModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy</button>
-                <button id="confirmDeleteBtn" class="px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors w-full">Xóa</button>
+                <button type="button" onclick="app.closeConfirmModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy</button>
+                <button type="button" id="confirmDeleteBtn" onclick="app.executeDelete()" class="px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors w-full">Xóa</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Cập nhật Số lượng Nhanh -->
-    <div id="quickAdjustModal" class="fixed inset-0 bg-black/50 z-[85] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6" id="quickAdjustContent">
-            <h3 class="font-bold text-xl text-gray-800 mb-1" id="quickAdjustTitle">Mã SP</h3>
-            <p class="text-gray-500 mb-6 text-sm" id="quickAdjustName">Tên SP</p>
-            
-            <input type="hidden" id="quickAdjustId">
-            <input type="hidden" id="quickAdjustCurrentQty">
-            
-            <div class="flex items-center justify-center gap-3 mb-6">
-                <button onclick="app.submitQuickAdjust(-1)" class="w-12 h-12 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xl font-bold transition-colors">
-                    <i class="fa-solid fa-minus"></i>
-                </button>
-                <input type="number" id="quickAdjustAmount" value="1" min="1" class="w-24 text-center px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-bold">
-                <button onclick="app.submitQuickAdjust(1)" class="w-12 h-12 rounded-full bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center text-xl font-bold transition-colors">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
-            </div>
-            
-            <button onclick="app.closeQuickAdjust()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy & Đóng</button>
-        </div>
-    </div>
-
-    <!-- Modal: Máy Quét Barcode/QR -->
-    <div id="scannerModal" class="fixed inset-0 bg-black/90 z-[80] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 mx-4" id="scannerModalContent">
-            <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-camera text-blue-500 mr-2"></i>Quét mã QR / Barcode</h3>
-                <button onclick="app.closeScanner()" class="text-gray-500 hover:text-red-500 transition-colors">
-                    <i class="fa-solid fa-times text-xl"></i>
-                </button>
-            </div>
-            <div class="p-4 bg-black">
-                <div id="reader" class="w-full overflow-hidden rounded-lg min-h-[250px] flex items-center justify-center bg-gray-900 text-gray-400">Đang khởi động Camera...</div>
-            </div>
-            <div class="p-4 bg-gray-50 text-center text-sm text-gray-500 border-t border-gray-200">
-                Đưa mã QR hoặc Barcode vào trung tâm khung hình.
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
+    <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[90] flex flex-col gap-2 pointer-events-none"></div>
 
     <script type="module">
@@ -477,6 +451,7 @@
                 this.products = [];
                 this.categories = [];
                 this.brands = [];
+                this.locations = []; // Thêm mảng nơi lưu trữ
                 this.searchQuery = '';
                 this.currentView = 'dashboard';
                 
@@ -485,11 +460,11 @@
                 this.productsRef = null;
                 this.categoriesRef = null;
                 this.brandsRef = null;
+                this.locationsRef = null;
                 
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
-                this.html5QrcodeScanner = null;
-                this.scanTarget = null; // 'serial' hoặc 'quick-adjust'
+                this.isRegisterMode = false;
 
                 this.initApp();
                 this.bindEvents();
@@ -510,10 +485,10 @@
             }
 
             checkLogin() {
-                const isLogged = sessionStorage.getItem('wms_logged_in');
+                const storedUser = localStorage.getItem('wms_logged_email');
                 document.getElementById('loading-screen').style.display = 'none';
                 
-                if(!isLogged) {
+                if(!storedUser) {
                     document.getElementById('login-container').classList.remove('hidden');
                     document.getElementById('login-container').style.display = 'flex';
                     document.getElementById('app-container').style.display = 'none';
@@ -524,11 +499,13 @@
                     document.getElementById('app-container').style.display = 'flex';
                     document.getElementById('app-container').classList.remove('hidden');
                     
+                    // Admin cứng
                     this.userId = 'admin_wms_demo';
                     
                     this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
                     this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
                     this.brandsRef = ref(this.db, 'users/' + this.userId + '/brands');
+                    this.locationsRef = ref(this.db, 'users/' + this.userId + '/locations');
                     
                     this.listenToData();
                 }
@@ -544,19 +521,21 @@
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Xử lý...';
 
                 if(u === 'admin' && p === '123') {
-                    sessionStorage.setItem('wms_logged_in', 'true');
+                    localStorage.setItem('wms_logged_email', 'admin');
                     document.getElementById('loginError').classList.add('hidden');
-                    this.checkLogin();
+                    
+                    // Làm sạch DOM trước khi đăng nhập để tránh lỗi khởi tạo form/DOM cũ
+                    window.location.reload(); 
                 } else {
                     document.getElementById('loginError').innerText = 'Tài khoản hoặc mật khẩu không đúng!';
                     document.getElementById('loginError').classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerText = 'Đăng nhập hệ thống';
                 }
-                btn.disabled = false;
-                btn.innerText = 'Đăng nhập hệ thống';
             }
 
             logout() {
-                sessionStorage.removeItem('wms_logged_in');
+                localStorage.removeItem('wms_logged_email');
                 window.location.reload();
             }
 
@@ -581,6 +560,13 @@
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                 });
+                
+                onValue(this.locationsRef, (snapshot) => {
+                    this.locations = [];
+                    snapshot.forEach((child) => this.locations.push({ id: child.key, ...child.val() }));
+                    this.populateDropdowns();
+                    if(this.currentView === 'categories') this.renderCategories();
+                });
             }
 
             bindEvents() {
@@ -595,8 +581,7 @@
                     this.renderProducts();
                 });
 
-                document.getElementById('catBrandForm').addEventListener('submit', (e) => this.handleSaveCatBrand(e));
-                
+                // Auto điền khi thay đổi danh mục (chỉ khi đang thêm mới)
                 document.getElementById('productCategory').addEventListener('change', (e) => {
                     const id = document.getElementById('productId').value;
                     if (!id && e.target.value) {
@@ -606,7 +591,31 @@
                         }
                     }
                 });
+                
+                // Event listener cho input Barcode và Serial: tự động fetch thông tin cũ nếu có trùng
+                const fillOldDataIfExist = (val, field) => {
+                    if(!val) return;
+                    // Bỏ qua nếu đang ở chế độ chỉnh sửa (có productId)
+                    if(document.getElementById('productId').value) return; 
+                    
+                    const oldProduct = this.products.find(p => p[field] === val);
+                    if(oldProduct) {
+                        if(oldProduct.name && !document.getElementById('productName').value) document.getElementById('productName').value = oldProduct.name;
+                        if(oldProduct.category && !document.getElementById('productCategory').value) document.getElementById('productCategory').value = oldProduct.category;
+                        if(oldProduct.brand && !document.getElementById('productBrand').value) document.getElementById('productBrand').value = oldProduct.brand;
+                        if(oldProduct.model && !document.getElementById('productModel').value) document.getElementById('productModel').value = oldProduct.model;
+                        if(oldProduct.color && !document.getElementById('productColor').value) document.getElementById('productColor').value = oldProduct.color;
+                        if(oldProduct.price && !document.getElementById('productPrice').value) document.getElementById('productPrice').value = oldProduct.price;
+                        if(oldProduct.purchasePlace && !document.getElementById('productPurchasePlace').value) document.getElementById('productPurchasePlace').value = oldProduct.purchasePlace;
+                        
+                        UI.showToast("Đã điền thông tin từ lần nhập trước.");
+                    }
+                };
 
+                document.getElementById('productBarcode').addEventListener('blur', (e) => fillOldDataIfExist(e.target.value.trim(), 'barcode'));
+                document.getElementById('productSerial').addEventListener('blur', (e) => fillOldDataIfExist(e.target.value.trim(), 'serial'));
+
+                // Bật/tắt số lượng
                 document.getElementById('toggleQuantity').addEventListener('change', (e) => {
                     const qtyInput = document.getElementById('productQuantity');
                     qtyInput.disabled = !e.target.checked;
@@ -624,10 +633,25 @@
             populateDropdowns() {
                 const catSelect = document.getElementById('productCategory');
                 const brandSelect = document.getElementById('productBrand');
-                catSelect.innerHTML = '<option value="" disabled selected>Chọn phân loại...</option>';
+                const placeSelect = document.getElementById('productPurchasePlace'); // Re-using Nơi mua as Nơi lưu trữ
+
+                // Categories
+                const currentCat = catSelect.value;
+                catSelect.innerHTML = '<option value="" disabled selected>Chọn...</option>';
                 this.categories.forEach(c => catSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.prefix})</option>`);
-                brandSelect.innerHTML = '<option value="">Chọn hãng...</option>';
+                catSelect.value = currentCat || '';
+                
+                // Brands
+                const currentBrand = brandSelect.value;
+                brandSelect.innerHTML = '<option value="">Chọn...</option>';
                 this.brands.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`);
+                brandSelect.value = currentBrand || '';
+                
+                // Locations (Nơi lưu)
+                const currentPlace = placeSelect.value;
+                placeSelect.innerHTML = '<option value="">Chọn nơi lưu...</option>';
+                this.locations.forEach(l => placeSelect.innerHTML += `<option value="${l.name}">${l.name}</option>`);
+                placeSelect.value = currentPlace || '';
             }
 
             switchView(viewName) {
@@ -648,7 +672,7 @@
                 });
                 document.getElementById(`view-${viewName}`).classList.remove('hidden');
 
-                const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Phân loại & Hãng' };
+                const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Thiết lập (Phân loại, Hãng, Nơi lưu)' };
                 document.getElementById('pageTitle').innerText = titles[viewName] || 'WMS';
 
                 this.render();
@@ -664,7 +688,9 @@
             renderCategories() {
                 const catTbody = document.getElementById('categoriesTableBody');
                 const brandTbody = document.getElementById('brandsTableBody');
+                const locTbody = document.getElementById('locationsTableBody');
                 
+                // Categories
                 catTbody.innerHTML = '';
                 this.categories.forEach(c => {
                     catTbody.innerHTML += `
@@ -679,6 +705,7 @@
                         </tr>`;
                 });
 
+                // Brands
                 brandTbody.innerHTML = '';
                 this.brands.forEach(b => {
                     brandTbody.innerHTML += `
@@ -691,10 +718,24 @@
                             </td>
                         </tr>`;
                 });
+                
+                // Locations
+                locTbody.innerHTML = '';
+                this.locations.forEach(l => {
+                    locTbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 border-b border-gray-100">
+                            <td class="px-6 py-3 text-gray-700">${l.name}</td>
+                            <td class="px-6 py-3 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <button onclick="app.requestDelete('${l.id}', 'location')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
             }
 
             renderDashboard() {
-                let totalItems = 0; let totalValue = 0; let lowStockItems = [];
+                let totalItems = 0; let totalValue = 0;
                 
                 const tbody = document.getElementById('dashboardTableBody');
                 const emptyState = document.getElementById('dashboardEmpty');
@@ -707,6 +748,7 @@
                     tbody.parentElement.classList.remove('hidden');
                     emptyState.classList.add('hidden');
                     
+                    let lowStockCount = 0;
                     this.products.forEach(p => {
                         const trackQty = p.trackQuantity !== false;
                         const qty = trackQty ? (parseInt(p.quantity) || 0) : 1;
@@ -714,22 +756,23 @@
                         totalItems += qty;
                         totalValue += (qty * (parseFloat(p.price) || 0));
                         
-                        if (trackQty && qty < 10) lowStockItems.push(p);
+                        if (trackQty && qty < 10) lowStockCount++;
 
                         const qtyUI = !trackQty ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-semibold">${p.code || ''}</td>
-                                <td class="px-6 py-3 border-b border-gray-50 text-sm">${p.name}</td>
-                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-bold text-right">${qtyUI}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-semibold align-middle">${p.code || ''}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm align-middle">${p.name}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-bold text-right align-middle">${qtyUI}</td>
                             </tr>`;
                     });
+                    
+                    document.getElementById('stat-low-stock').innerText = lowStockCount;
                 }
 
                 document.getElementById('stat-total-items').innerText = totalItems.toLocaleString('vi-VN');
                 document.getElementById('stat-total-value').innerText = UI.formatCurrency(totalValue);
-                document.getElementById('stat-low-stock').innerText = lowStockItems.length;
             }
 
             renderProducts() {
@@ -761,10 +804,12 @@
                         let metaInfo = [];
                         if(p.model) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`);
                         if(p.color) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-palette"></i> ${p.color}</span>`);
-                        if(p.serial) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100"><i class="fa-solid fa-qrcode"></i> ${p.serial}</span>`);
+                        if(p.purchasePlace) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-100"><i class="fa-solid fa-location-dot"></i> ${p.purchasePlace}</span>`);
                         
                         const metaUI = metaInfo.length > 0 ? `<div class="text-[11px] mt-2 flex flex-wrap gap-2">${metaInfo.join('')}</div>` : '';
-                        const barcodeUI = p.barcode ? `<div class="text-[11px] text-gray-500 mt-1 font-mono flex items-center gap-1"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : '';
+                        const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1"><i class="fa-solid fa-qrcode"></i> S/N: ${p.serial}</div>` : '';
+                        const barcodeUI = p.barcode ? `<div class="text-[11px] text-gray-500 mt-1 font-mono flex items-center gap-1"><i class="fa-solid fa-barcode"></i> Barcode: ${p.barcode}</div>` : '';
+                        
                         const isTracked = p.trackQuantity !== false;
                         const qtyUI = !isTracked ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
@@ -775,6 +820,7 @@
                                 <td class="px-6 py-4 font-medium text-gray-700 align-top">
                                     <div class="text-base font-bold text-gray-800">${p.name}</div>
                                     ${barcodeUI}
+                                    ${serialUI}
                                     ${metaUI}
                                 </td>
                                 <td class="px-6 py-4 text-right align-top w-32">${qtyUI}</td>
@@ -794,7 +840,6 @@
                 document.getElementById('productForm').reset();
                 document.getElementById('productId').value = '';
                 document.getElementById('productCode').value = '';
-                document.getElementById('productBarcode').value = '';
                 
                 const tQCheckbox = document.getElementById('toggleQuantity');
                 const qInput = document.getElementById('productQuantity');
@@ -839,8 +884,7 @@
                 setTimeout(() => m.classList.add('hidden'), 300);
             }
 
-            async handleSaveProduct(e) {
-                if(e) e.preventDefault();
+            async handleSaveProduct() {
                 const form = document.getElementById('productForm');
                 if(!form.checkValidity()) { form.reportValidity(); return; }
 
@@ -893,43 +937,52 @@
                 }
             }
 
-            openCatBrandModal(type) {
-                document.getElementById('catBrandForm').reset();
-                document.getElementById('catBrandType').value = type;
+            openConfigModal(type) {
+                document.getElementById('configForm').reset();
+                document.getElementById('configType').value = type;
                 if(type === 'category') {
-                    document.getElementById('catBrandModalTitle').innerText = 'Thêm Phân Loại';
-                    document.getElementById('catPrefixContainer').classList.remove('hidden');
-                    document.getElementById('catPrefix').setAttribute('required', 'true');
+                    document.getElementById('configModalTitle').innerText = 'Thêm Phân Loại';
+                    document.getElementById('configPrefixContainer').classList.remove('hidden');
+                    document.getElementById('configPrefix').setAttribute('required', 'true');
+                } else if(type === 'brand') {
+                    document.getElementById('configModalTitle').innerText = 'Thêm Hãng Sản Xuất';
+                    document.getElementById('configPrefixContainer').classList.add('hidden');
+                    document.getElementById('configPrefix').removeAttribute('required');
                 } else {
-                    document.getElementById('catBrandModalTitle').innerText = 'Thêm Hãng Sản Xuất';
-                    document.getElementById('catPrefixContainer').classList.add('hidden');
-                    document.getElementById('catPrefix').removeAttribute('required');
+                    document.getElementById('configModalTitle').innerText = 'Thêm Nơi Lưu Trữ';
+                    document.getElementById('configPrefixContainer').classList.add('hidden');
+                    document.getElementById('configPrefix').removeAttribute('required');
                 }
-                const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
+                const m = document.getElementById('configModal'); const c = document.getElementById('configModalContent');
                 m.classList.remove('hidden'); void m.offsetWidth;
                 m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
             }
 
-            closeCatBrandModal() {
-                const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
+            closeConfigModal() {
+                const m = document.getElementById('configModal'); const c = document.getElementById('configModalContent');
                 m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
                 setTimeout(() => m.classList.add('hidden'), 300);
             }
 
-            async handleSaveCatBrand(e) {
-                e.preventDefault();
-                const type = document.getElementById('catBrandType').value;
-                const name = document.getElementById('catBrandName').value.trim();
-                const prefix = document.getElementById('catPrefix').value.trim().toUpperCase();
+            async handleSaveConfig() {
+                const form = document.getElementById('configForm');
+                if(!form.checkValidity()) { form.reportValidity(); return; }
+
+                const type = document.getElementById('configType').value;
+                const name = document.getElementById('configName').value.trim();
+                const prefix = document.getElementById('configPrefix').value.trim().toUpperCase();
+                
                 try {
                     if(type === 'category') {
                         if(this.categories.some(c => c.prefix === prefix)) { UI.showToast("Mã viết tắt đã tồn tại!", "error"); return; }
                         await set(push(this.categoriesRef), { name, prefix });
-                    } else {
+                    } else if (type === 'brand') {
                         await set(push(this.brandsRef), { name });
+                    } else {
+                        await set(push(this.locationsRef), { name });
                     }
                     UI.showToast("Thêm mới thành công!");
-                    this.closeCatBrandModal();
+                    this.closeConfigModal();
                 } catch (error) { UI.showToast("Lỗi khi lưu!", "error"); }
             }
 
@@ -954,159 +1007,12 @@
                     let path = 'products';
                     if(this.deleteCandidateType === 'category') path = 'categories';
                     if(this.deleteCandidateType === 'brand') path = 'brands';
+                    if(this.deleteCandidateType === 'location') path = 'locations';
                     await remove(ref(this.db, 'users/' + this.userId + '/' + path + '/' + this.deleteCandidateId));
                     UI.showToast("Đã xóa thành công");
                     this.closeConfirmModal();
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
-            }
-
-            openScanner(target = 'serial') {
-                this.scanTarget = target; 
-                const modal = document.getElementById('scannerModal');
-                const content = document.getElementById('scannerModalContent');
-                
-                modal.classList.remove('hidden');
-                void modal.offsetWidth;
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-
-                if(this.html5QrcodeScanner) {
-                    this.html5QrcodeScanner.clear();
-                }
-                
-                this.html5QrcodeScanner = new Html5Qrcode("reader");
-
-                const config = { 
-                    fps: 10, 
-                    qrbox: { width: 250, height: 250 }, 
-                    aspectRatio: 1.0,
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.QR_CODE,
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.UPC_A
-                    ]
-                };
-
-                this.html5QrcodeScanner.start(
-                    { facingMode: "environment" }, 
-                    config,
-                    (decodedText) => {
-                        this.closeScanner();
-                        if (this.scanTarget === 'quick-adjust') {
-                            this.processQuickAdjustScan(decodedText);
-                        } else if (this.scanTarget === 'barcode') {
-                            document.getElementById('productBarcode').value = decodedText;
-                            UI.showToast("Quét Barcode thành công!");
-                        } else {
-                            document.getElementById('productSerial').value = decodedText;
-                            UI.showToast("Quét Serial thành công!");
-                        }
-                    },
-                    (errorMessage) => { }
-                ).catch(err => {
-                    console.error("Camera error:", err);
-                    UI.showToast("Không thể khởi động Camera. Vui lòng cấp quyền truy cập.", "error");
-                });
-            }
-
-            closeScanner() {
-                if (this.html5QrcodeScanner && this.html5QrcodeScanner.isScanning) {
-                    this.html5QrcodeScanner.stop().then(() => {
-                        this.html5QrcodeScanner.clear();
-                    }).catch(err => console.log(err));
-                }
-
-                const modal = document.getElementById('scannerModal');
-                const content = document.getElementById('scannerModalContent');
-                
-                modal.classList.add('opacity-0');
-                content.classList.remove('scale-100');
-                content.classList.add('scale-95');
-                
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 300);
-            }
-
-            processQuickAdjustScan(qrCode) {
-                const product = this.products.find(p => p.barcode === qrCode || p.serial === qrCode || p.code === qrCode);
-                
-                if (!product) {
-                    UI.showToast(`Không tìm thấy sản phẩm có mã: ${qrCode}`, "error");
-                    return;
-                }
-
-                if (product.trackQuantity === false) {
-                    UI.showToast("Sản phẩm này không theo dõi số lượng tồn kho!", "error");
-                    return;
-                }
-
-                document.getElementById('quickAdjustId').value = product.id;
-                document.getElementById('quickAdjustCurrentQty').value = product.quantity;
-                document.getElementById('quickAdjustTitle').innerText = product.code || 'SP';
-                document.getElementById('quickAdjustName').innerText = product.name;
-                document.getElementById('quickAdjustAmount').value = 1;
-
-                const m = document.getElementById('quickAdjustModal'); 
-                const c = document.getElementById('quickAdjustContent');
-                m.classList.remove('hidden'); void m.offsetWidth;
-                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
-            }
-
-            closeQuickAdjust() {
-                const m = document.getElementById('quickAdjustModal'); 
-                const c = document.getElementById('quickAdjustContent');
-                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
-                setTimeout(() => m.classList.add('hidden'), 300);
-            }
-
-            async submitQuickAdjust(multiplier) {
-                const id = document.getElementById('quickAdjustId').value;
-                const currentQty = parseInt(document.getElementById('quickAdjustCurrentQty').value, 10);
-                const amount = parseInt(document.getElementById('quickAdjustAmount').value, 10);
-                const p = this.products.find(x => x.id === id);
-                
-                if (!p || isNaN(amount) || amount < 1) return;
-
-                let newQty = currentQty + (amount * multiplier);
-                if (newQty < 0) newQty = 0; 
-
-                try {
-                    await update(ref(this.db, 'users/' + this.userId + '/products/' + id), { 
-                        quantity: newQty,
-                        updatedAt: new Date().toISOString()
-                    });
-                    
-                    const actionTxt = multiplier === 1 ? 'Cộng (+)' : 'Trừ (-)';
-                    const colorTxt = multiplier === 1 ? 'text-green-600' : 'text-red-600';
-                    UI.showToast(`Đã ${actionTxt} ${amount} sản phẩm ${p.name}`);
-                    this.addQuickHistory(`<strong>${p.code || p.name}</strong>: <span class="${colorTxt} font-bold">${actionTxt} ${amount}</span> (Còn: ${newQty})`);
-                    
-                    this.closeQuickAdjust();
-                } catch (error) {
-                    UI.showToast("Lỗi khi cập nhật tồn kho", "error");
-                }
-            }
-
-            addQuickHistory(htmlMsg) {
-                const container = document.getElementById('quickActionHistory');
-                const list = document.getElementById('quickActionList');
-                container.classList.remove('hidden');
-                
-                const time = new Date().toLocaleTimeString('vi-VN', { hour12: false });
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="text-xs text-gray-400 mr-2">[${time}]</span> ${htmlMsg}`;
-                
-                list.insertBefore(li, list.firstChild);
-                
-                if (list.children.length > 5) {
-                    list.removeChild(list.lastChild);
-                }
             }
         }
 
