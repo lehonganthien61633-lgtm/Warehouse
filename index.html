@@ -231,9 +231,7 @@
     <!-- Firebase & Logic script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getDatabase, ref, onValue, push, update, remove, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
-
         // UI Utilities
         const UI = {
             formatCurrency: (amount) => {
@@ -282,20 +280,19 @@
 
             async initFirebase() {
                 try {
-                    // Sử dụng trực tiếp URL database của bạn
                     const firebaseConfig = {
                         databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/"
                     };
 
                     const app = initializeApp(firebaseConfig);
-                    const auth = getAuth(app);
                     this.db = getDatabase(app);
 
-                    // Đăng nhập ẩn danh để có quyền truy cập userId
-                    await signInAnonymously(auth);
-
-                    if (!auth.currentUser) throw new Error("Authentication failed");
-                    this.userId = auth.currentUser.uid;
+                    // Sử dụng ID thiết bị cục bộ thay vì Firebase Auth (do thiếu apiKey)
+                    this.userId = localStorage.getItem('wms_user_id');
+                    if (!this.userId) {
+                        this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                        localStorage.setItem('wms_user_id', this.userId);
+                    }
                     
                     // Khởi tạo Reference tới Realtime Database
                     this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
