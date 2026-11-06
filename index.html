@@ -14,6 +14,8 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #app-container { display: none; }
+        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
@@ -21,37 +23,7 @@
     <!-- VIEW: LOADING -->
     <div id="loading-screen" class="w-full h-full flex flex-col items-center justify-center bg-slate-800 px-4 z-[100] fixed inset-0">
         <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
-        <p class="text-gray-300 font-medium tracking-wide">Đang tải hệ thống...</p>
-    </div>
-
-    <!-- VIEW: LOGIN/REGISTER -->
-    <div id="login-container" class="w-full h-full flex-col items-center justify-center bg-slate-800 px-4 z-50 fixed inset-0 hidden">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                <i class="fa-solid fa-boxes-stacked"></i>
-            </div>
-            <h2 id="authTitle" class="text-2xl font-bold text-gray-800 mb-2">Đăng nhập WMS</h2>
-            <p class="text-gray-500 text-sm mb-6">Đồng bộ dữ liệu an toàn trên Firebase.</p>
-            
-            <form id="loginForm" class="space-y-4">
-                <div class="text-left">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tài khoản (vd: admin)</label>
-                    <input type="text" id="username" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="vd: shop123">
-                </div>
-                <div class="text-left relative">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu (vd: 123)</label>
-                    <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập mật khẩu...">
-                </div>
-                <div id="loginError" class="text-red-500 text-sm hidden font-medium text-left">Tài khoản hoặc mật khẩu không đúng!</div>
-                <button type="submit" id="loginBtn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-md">
-                    Đăng nhập hệ thống
-                </button>
-            </form>
-            <div class="mt-4 pt-4 border-t border-gray-100 text-sm">
-                <span id="authToggleText" class="text-gray-500">Chưa có tài khoản?</span>
-                <button type="button" onclick="app.toggleAuthMode()" id="toggleAuthBtn" class="text-blue-600 font-semibold ml-1 hover:underline">Đăng ký ngay</button>
-            </div>
-        </div>
+        <p class="text-gray-300 font-medium tracking-wide">Đang đồng bộ dữ liệu kho...</p>
     </div>
 
     <!-- MAIN APP WRAPPER -->
@@ -81,10 +53,8 @@
                     <span class="font-medium">Thiết lập</span>
                 </button>
             </nav>
-            <div class="p-4 text-xs border-t border-slate-700 hidden md:block">
-                <button onclick="app.logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-red-400 hover:bg-slate-700 transition-colors">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
-                </button>
+            <div class="p-4 text-xs border-t border-slate-700 hidden md:block text-center text-gray-400">
+                <i class="fa-solid fa-globe"></i> Dùng chung
             </div>
         </aside>
 
@@ -93,9 +63,8 @@
             <header class="bg-white shadow-sm sticky top-0 z-10 px-6 py-4 flex justify-between items-center">
                 <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">Bảng điều khiển</h2>
                 <div class="flex items-center gap-3">
-                    <button onclick="app.logout()" class="md:hidden text-red-500 mr-2"><i class="fa-solid fa-power-off text-xl"></i></button>
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold" id="headerUserIcon">
-                        <i class="fa-solid fa-user-shield"></i>
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold" title="Hệ thống dùng chung">
+                        <i class="fa-solid fa-users"></i>
                     </div>
                 </div>
             </header>
@@ -128,14 +97,14 @@
                         </div>
                     </div>
 
-                    <!-- Quét nhanh điều chỉnh tồn kho (Thay bằng nhập Serial/Mã) -->
+                    <!-- Quét nhanh điều chỉnh tồn kho -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div>
                             <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng</h3>
-                            <p class="text-sm text-gray-500 mt-1">Nhập Serial / SKU / Mã SP để xuất / nhập kho trực tiếp.</p>
+                            <p class="text-sm text-gray-500 mt-1">Nhập Serial / SKU / Mã SP để xuất hoặc nhập kho.</p>
                         </div>
                         <div class="w-full sm:w-auto flex gap-2">
-                            <input type="text" id="quickAdjustInput" class="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Nhập Serial / Mã SP...">
+                            <input type="text" id="quickAdjustInput" class="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Nhập Serial / SKU / Mã SP...">
                             <button onclick="app.triggerQuickAdjust()" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap">
                                 Tìm kiếm
                             </button>
@@ -151,15 +120,16 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[500px]">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
                             <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-list text-blue-500"></i> Danh sách mặt hàng</h3>
-                            <button onclick="app.switchView('products')" class="text-sm text-blue-600 font-medium hover:underline">Quản lý chi tiết</button>
+                            <span class="text-xs text-gray-500 font-medium">Bấm vào sản phẩm để điều chỉnh tồn kho</span>
                         </div>
+                        
                         <div class="overflow-auto flex-1 no-scrollbar p-0">
                             <table class="w-full text-left border-collapse relative">
                                 <thead class="bg-white sticky top-0 shadow-sm z-10">
                                     <tr class="text-gray-500 text-sm border-b border-gray-100">
-                                        <th class="px-6 py-3 font-medium bg-white">Mã SP</th>
+                                        <th class="px-6 py-3 font-medium bg-white w-24">Mã SP</th>
                                         <th class="px-6 py-3 font-medium bg-white">Tên sản phẩm</th>
-                                        <th class="px-6 py-3 font-medium text-right bg-white">Số lượng tồn</th>
+                                        <th class="px-6 py-3 font-medium text-right bg-white w-32">Số lượng tồn</th>
                                     </tr>
                                 </thead>
                                 <tbody id="dashboardTableBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
@@ -168,6 +138,13 @@
                                 <i class="fa-solid fa-box-open text-4xl text-gray-300 mb-3"></i>
                                 <p>Kho hàng đang trống.</p>
                             </div>
+                        </div>
+                        
+                        <!-- Nút Thêm sản phẩm ở cuối danh sách Bảng điều khiển -->
+                        <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-center shrink-0">
+                            <button onclick="app.openModal()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto">
+                                <i class="fa-solid fa-plus"></i> Thêm sản phẩm mới
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -471,14 +448,12 @@
                 this.currentView = 'dashboard';
                 
                 this.db = null;
-                this.userId = null;
                 this.productsRef = null;
                 this.categoriesRef = null;
                 this.brandsRef = null;
                 
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
-                this.isRegisterMode = false;
                 
                 this.initApp();
                 this.bindEvents();
@@ -490,114 +465,17 @@
                     const app = initializeApp(firebaseConfig);
                     this.db = getDatabase(app);
                     
-                    this.checkLogin();
+                    // Cấu trúc mới: Lưu trực tiếp ở root
+                    this.productsRef = ref(this.db, 'products');
+                    this.categoriesRef = ref(this.db, 'categories');
+                    this.brandsRef = ref(this.db, 'brands');
+                    
+                    this.listenToData();
                 } catch (error) { 
                     console.error("Init Error:", error); 
                     document.getElementById('loading-screen').style.display = 'none';
                     UI.showToast("Không thể khởi tạo CSDL", "error");
                 }
-            }
-
-            checkLogin() {
-                const storedUser = localStorage.getItem('wms_logged_username');
-                
-                if(!storedUser) {
-                    document.getElementById('loading-screen').style.display = 'none';
-                    document.getElementById('login-container').classList.remove('hidden');
-                    document.getElementById('login-container').style.display = 'flex';
-                    document.getElementById('app-container').style.display = 'none';
-                } else {
-                    document.getElementById('loading-screen').style.display = 'none';
-                    document.getElementById('login-container').classList.add('hidden');
-                    document.getElementById('login-container').style.display = 'none';
-                    document.getElementById('app-container').style.display = 'flex';
-                    document.getElementById('app-container').classList.remove('hidden');
-                    
-                    this.userId = storedUser;
-                    
-                    this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
-                    this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
-                    this.brandsRef = ref(this.db, 'users/' + this.userId + '/brands');
-                    
-                    this.listenToData();
-                }
-            }
-
-            toggleAuthMode() {
-                this.isRegisterMode = !this.isRegisterMode;
-                const btn = document.getElementById('loginBtn');
-                const toggleBtn = document.getElementById('toggleAuthBtn');
-                const toggleText = document.getElementById('authToggleText');
-                const title = document.getElementById('authTitle');
-
-                if (this.isRegisterMode) {
-                    title.innerText = 'Đăng ký Tài khoản';
-                    btn.innerText = 'Đăng ký & Đăng nhập';
-                    toggleText.innerText = 'Đã có tài khoản?';
-                    toggleBtn.innerText = 'Đăng nhập ngay';
-                } else {
-                    title.innerText = 'Đăng nhập WMS';
-                    btn.innerText = 'Đăng nhập hệ thống';
-                    toggleText.innerText = 'Chưa có tài khoản?';
-                    toggleBtn.innerText = 'Đăng ký ngay';
-                }
-                document.getElementById('loginError').classList.add('hidden');
-            }
-
-            async handleLogin(e) {
-                e.preventDefault();
-                const u = document.getElementById('username').value.trim();
-                const p = document.getElementById('password').value.trim();
-                const btn = document.getElementById('loginBtn');
-                const errorEl = document.getElementById('loginError');
-                
-                const safeUsername = u.replace(/[.#$[\]\s]/g, '_'); 
-
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Xử lý...';
-                errorEl.classList.add('hidden');
-
-                if (u === 'admin' && p === '123' && !this.isRegisterMode) {
-                    localStorage.setItem('wms_logged_username', 'admin');
-                    window.location.reload();
-                    return;
-                }
-
-                try {
-                    const userRef = ref(this.db, 'accounts/' + safeUsername);
-                    const snapshot = await get(userRef);
-                    const userData = snapshot.val();
-
-                    if (this.isRegisterMode) {
-                        if (userData || safeUsername === 'admin') {
-                            errorEl.innerText = 'Tài khoản này đã tồn tại!';
-                            errorEl.classList.remove('hidden');
-                        } else {
-                            await set(userRef, { password: btoa(p) });
-                            localStorage.setItem('wms_logged_username', safeUsername);
-                            window.location.reload();
-                        }
-                    } else {
-                        if (userData && userData.password === btoa(p)) {
-                            localStorage.setItem('wms_logged_username', safeUsername);
-                            window.location.reload();
-                        } else {
-                            errorEl.innerText = 'Tài khoản hoặc mật khẩu không đúng!';
-                            errorEl.classList.remove('hidden');
-                        }
-                    }
-                } catch (err) {
-                    errorEl.innerText = 'Lỗi kết nối Firebase!';
-                    errorEl.classList.remove('hidden');
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = this.isRegisterMode ? 'Đăng ký & Đăng nhập' : 'Đăng nhập hệ thống';
-                }
-            }
-
-            logout() {
-                localStorage.removeItem('wms_logged_username');
-                window.location.reload();
             }
 
             listenToData() {
@@ -606,6 +484,8 @@
                 const checkAllLoaded = () => {
                     if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands) {
                         document.getElementById('loading-screen').style.display = 'none';
+                        document.getElementById('app-container').style.display = 'flex';
+                        document.getElementById('app-container').classList.remove('hidden');
                     }
                 }
 
@@ -614,6 +494,7 @@
                     snapshot.forEach((child) => this.products.push({ id: child.key, ...child.val() }));
                     if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
                     if(this.currentView !== 'categories') this.render();
+                    
                     dataLoaded.products = true;
                     checkAllLoaded();
                 });
@@ -623,6 +504,7 @@
                     snapshot.forEach((child) => this.categories.push({ id: child.key, ...child.val() }));
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
+                    
                     dataLoaded.categories = true;
                     checkAllLoaded();
                 });
@@ -632,14 +514,13 @@
                     snapshot.forEach((child) => this.brands.push({ id: child.key, ...child.val() }));
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
+                    
                     dataLoaded.brands = true;
                     checkAllLoaded();
                 });
             }
 
             bindEvents() {
-                document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
-
                 document.getElementById('mobileMenuBtn').addEventListener('click', () => {
                     document.getElementById('sidebarNav').classList.toggle('hidden');
                 });
@@ -810,7 +691,7 @@
                         const qtyUI = !trackQty ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
                         tbody.innerHTML += `
-                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="app.processQuickAdjustScan('${p.sku || p.serial || p.code}')">
+                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="app.openQuickAdjustById('${p.id}')">
                                 <td class="px-6 py-3 border-b border-gray-50 text-sm font-semibold align-middle text-blue-600 hover:underline">${p.code || ''}</td>
                                 <td class="px-6 py-3 border-b border-gray-50 text-sm align-middle">${p.name}</td>
                                 <td class="px-6 py-3 border-b border-gray-50 text-sm font-bold text-right align-middle">${qtyUI}</td>
@@ -981,7 +862,7 @@
                         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
                         return;
                     }
-                    if (id) await update(ref(this.db, 'users/' + this.userId + '/products/' + id), productData);
+                    if (id) await update(ref(this.db, 'products/' + id), productData);
                     else await set(push(this.productsRef), { ...productData, createdAt: new Date().toISOString() });
                     UI.showToast(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
                     this.closeModal();
@@ -1056,11 +937,15 @@
                     let path = 'products';
                     if(this.deleteCandidateType === 'category') path = 'categories';
                     if(this.deleteCandidateType === 'brand') path = 'brands';
-                    await remove(ref(this.db, 'users/' + this.userId + '/' + path + '/' + this.deleteCandidateId));
+                    await remove(ref(this.db, path + '/' + this.deleteCandidateId));
                     UI.showToast("Đã xóa thành công");
                     this.closeConfirmModal();
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
+            }
+
+            logout() {
+                window.location.reload();
             }
 
             triggerQuickAdjust() {
@@ -1080,6 +965,12 @@
                     UI.showToast(`Không tìm thấy sản phẩm có mã: ${qrCode}`, "error");
                     return;
                 }
+                this.openQuickAdjustById(product.id);
+            }
+            
+            openQuickAdjustById(id) {
+                const product = this.products.find(p => p.id === id);
+                if (!product) return;
 
                 if (product.trackQuantity === false) {
                     UI.showToast("Sản phẩm này không theo dõi số lượng tồn kho!", "error");
@@ -1117,7 +1008,7 @@
                 if (newQty < 0) newQty = 0; 
 
                 try {
-                    await update(ref(this.db, 'users/' + this.userId + '/products/' + id), { 
+                    await update(ref(this.db, 'products/' + id), { 
                         quantity: newQty,
                         updatedAt: new Date().toISOString()
                     });
