@@ -593,11 +593,12 @@
             renderDashboard() {
                 let totalItems = 0; let totalValue = 0; let lowStockItems = [];
                 this.products.forEach(p => {
-                    const qty = parseInt(p.quantity) || 0;
                     const trackQty = p.trackQuantity !== false;
+                    // Nếu có track số lượng thì lấy số lượng thật, nếu không track thì mặc định tính là 1
+                    const qty = trackQty ? (parseInt(p.quantity) || 0) : 1;
                     
-                    if(trackQty) totalItems += qty;
-                    totalValue += (trackQty ? qty : 1) * (parseFloat(p.price) || 0);
+                    totalItems += qty;
+                    totalValue += (qty * (parseFloat(p.price) || 0));
                     
                     if (trackQty && qty < 10) lowStockItems.push(p);
                 });
