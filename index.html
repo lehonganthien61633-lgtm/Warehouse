@@ -21,7 +21,7 @@
     <!-- VIEW: LOADING -->
     <div id="loading-screen" class="w-full h-full flex flex-col items-center justify-center bg-slate-800 px-4 z-[100] fixed inset-0">
         <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
-        <p class="text-gray-300 font-medium tracking-wide">Đang đồng bộ dữ liệu kho...</p>
+        <p class="text-gray-300 font-medium tracking-wide">Đang đồng bộ dữ liệu kho chung...</p>
     </div>
 
     <!-- MAIN APP WRAPPER -->
@@ -52,7 +52,7 @@
                 </button>
             </nav>
             <div class="p-4 text-xs border-t border-slate-700 hidden md:block text-center text-gray-400">
-                <i class="fa-solid fa-globe"></i> Dùng chung
+                <i class="fa-solid fa-globe"></i> Hệ thống dùng chung
             </div>
         </aside>
 
@@ -61,7 +61,8 @@
             <header class="bg-white shadow-sm sticky top-0 z-10 px-6 py-4 flex justify-between items-center">
                 <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">Bảng điều khiển</h2>
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold" title="Hệ thống dùng chung">
+                    <button onclick="window.location.reload()" class="md:hidden text-gray-500 hover:text-blue-500 mr-2"><i class="fa-solid fa-rotate-right text-xl"></i></button>
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold" title="Cơ sở dữ liệu công khai">
                         <i class="fa-solid fa-users"></i>
                     </div>
                 </div>
@@ -409,7 +410,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, onValue, update, remove, set, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
         
         const UI = {
             formatCurrency: (amount) => {
@@ -464,7 +465,6 @@
                     const app = initializeApp(firebaseConfig);
                     this.db = getDatabase(app);
                     
-                    // Cấu trúc mới: Lưu trực tiếp ở root
                     this.productsRef = ref(this.db, 'products');
                     this.categoriesRef = ref(this.db, 'categories');
                     this.brandsRef = ref(this.db, 'brands');
@@ -490,9 +490,12 @@
 
                 onValue(this.productsRef, (snapshot) => {
                     this.products = [];
-                    snapshot.forEach((child) => this.products.push({ id: child.key, ...child.val() }));
+                    snapshot.forEach((child) => {
+                        this.products.push({ id: child.key, ...child.val() });
+                    });
                     if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
-                    if(this.currentView !== 'categories') this.render();
+                    
+                    this.render();
                     
                     dataLoaded.products = true;
                     checkAllLoaded();
@@ -500,7 +503,9 @@
 
                 onValue(this.categoriesRef, (snapshot) => {
                     this.categories = [];
-                    snapshot.forEach((child) => this.categories.push({ id: child.key, ...child.val() }));
+                    snapshot.forEach((child) => {
+                        this.categories.push({ id: child.key, ...child.val() });
+                    });
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     
@@ -510,7 +515,9 @@
 
                 onValue(this.brandsRef, (snapshot) => {
                     this.brands = [];
-                    snapshot.forEach((child) => this.brands.push({ id: child.key, ...child.val() }));
+                    snapshot.forEach((child) => {
+                        this.brands.push({ id: child.key, ...child.val() });
+                    });
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     
@@ -595,12 +602,16 @@
 
                 const currentCat = catSelect.value;
                 catSelect.innerHTML = '<option value="" disabled selected>Chọn...</option>';
-                this.categories.forEach(c => catSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.prefix})</option>`);
+                this.categories.forEach(c => {
+                    if(c.name) catSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.prefix})</option>`;
+                });
                 catSelect.value = currentCat || '';
                 
                 const currentBrand = brandSelect.value;
                 brandSelect.innerHTML = '<option value="">Chọn...</option>';
-                this.brands.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`);
+                this.brands.forEach(b => {
+                    if(b.name) brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+                });
                 brandSelect.value = currentBrand || '';
             }
 
@@ -641,6 +652,7 @@
                 
                 catTbody.innerHTML = '';
                 this.categories.forEach(c => {
+                    if(!c.name) return;
                     catTbody.innerHTML += `
                         <tr class="hover:bg-gray-50 border-b border-gray-100">
                             <td class="px-6 py-3 font-semibold text-gray-800">${c.prefix}</td>
@@ -655,6 +667,7 @@
 
                 brandTbody.innerHTML = '';
                 this.brands.forEach(b => {
+                    if(!b.name) return;
                     brandTbody.innerHTML += `
                         <tr class="hover:bg-gray-50 border-b border-gray-100">
                             <td class="px-6 py-3 text-gray-700">${b.name}</td>
@@ -683,6 +696,7 @@
                     
                     let lowStockCount = 0;
                     this.products.forEach(p => {
+                        if(!p.name) return;
                         const trackQty = p.trackQuantity !== false;
                         const qty = trackQty ? (parseInt(p.quantity) || 0) : 1;
                         
@@ -713,7 +727,7 @@
                 const emptyState = document.getElementById('tableEmpty');
                 tbody.innerHTML = '';
 
-                const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery) || (p.sku || '').includes(this.searchQuery));
+                const filtered = this.products.filter(p => p.name && (p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery) || (p.sku || '').includes(this.searchQuery)));
 
                 if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
                     emptyState.classList.remove('hidden');
@@ -847,11 +861,10 @@
                     if(isNaN(finalQty) || finalQty < 1) finalQty = 1; 
                 }
 
-                // Dùng chính Mã SP (code) làm Key lưu trên Firebase để thay thế ID ngẫu nhiên
                 const productKey = code;
 
                 const productData = {
-                    id: productKey, // ID giờ chính là Code
+                    id: productKey,
                     category,
                     brand: document.getElementById('productBrand').value,
                     code,
@@ -868,7 +881,6 @@
                 };
 
                 try {
-                    // Nếu đổi mã code (ở tương lai) thì chặn nếu trùng
                     if (this.products.some(p => p.code === code && p.id !== originalId)) {
                         UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); 
                         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
@@ -876,14 +888,11 @@
                     }
 
                     if (originalId) {
-                        // Sửa sản phẩm
                         if (oldCode && oldCode !== code) {
-                            // Xóa node cũ nếu mã code bị đổi
                             await remove(ref(this.db, 'products/' + oldCode));
                         }
                         await set(ref(this.db, 'products/' + productKey), productData);
                     } else {
-                        // Thêm sản phẩm mới bằng SET thẳng vào mã code
                         productData.createdAt = new Date().toISOString();
                         await set(ref(this.db, 'products/' + productKey), productData);
                     }
@@ -929,7 +938,7 @@
                 const prefix = document.getElementById('configPrefix').value.trim().toUpperCase();
                 
                 try {
-                    const safeKey = this.cleanKey(name); // Dùng tên làm Key
+                    const safeKey = this.cleanKey(name); 
                     
                     if(type === 'category') {
                         if(this.categories.some(c => c.prefix === prefix || c.id === safeKey)) { 
@@ -973,10 +982,6 @@
                     this.closeConfirmModal();
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
-            }
-
-            logout() {
-                window.location.reload();
             }
 
             triggerQuickAdjust() {
