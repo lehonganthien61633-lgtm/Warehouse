@@ -14,8 +14,6 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        #app-container { display: none; }
-        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
@@ -124,6 +122,26 @@
                                 <p id="stat-low-stock" class="text-2xl font-bold text-gray-800">0</p>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Quét nhanh điều chỉnh tồn kho (Thay bằng nhập Serial) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng</h3>
+                            <p class="text-sm text-gray-500 mt-1">Nhập Serial hoặc Mã SP để xuất / nhập kho trực tiếp.</p>
+                        </div>
+                        <div class="w-full sm:w-auto flex gap-2">
+                            <input type="text" id="quickAdjustInput" class="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Nhập Serial / Mã SP...">
+                            <button onclick="app.triggerQuickAdjust()" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap">
+                                Tìm kiếm
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lịch sử thao tác quét -->
+                    <div id="quickActionHistory" class="bg-blue-50 border border-blue-100 rounded-xl p-4 hidden">
+                        <h4 class="text-sm font-bold text-blue-800 mb-2"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Lịch sử điều chỉnh gần nhất</h4>
+                        <ul id="quickActionList" class="text-sm text-gray-600 space-y-1 max-h-32 overflow-y-auto no-scrollbar"></ul>
                     </div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[500px]">
@@ -258,7 +276,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Mã SKU</label>
-                            <input type="text" id="productSku" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono tracking-wide" placeholder="Sinh tự động...">
+                            <input type="text" id="productSku" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono font-bold text-sm cursor-not-allowed" placeholder="Sinh tự động...">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (S/N)</label>
@@ -280,7 +298,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Mã Sản Phẩm</label>
-                            <input type="text" id="productCode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono font-bold text-sm" placeholder="Tự động sinh">
+                            <input type="text" id="productCode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono font-bold text-sm cursor-not-allowed" placeholder="Tự động sinh">
                         </div>
                     </div>
 
@@ -383,6 +401,29 @@
         </div>
     </div>
 
+    <!-- Modal: Cập nhật Số lượng Nhanh -->
+    <div id="quickAdjustModal" class="fixed inset-0 bg-black/50 z-[85] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6" id="quickAdjustContent">
+            <h3 class="font-bold text-xl text-gray-800 mb-1" id="quickAdjustTitle">Mã SP</h3>
+            <p class="text-gray-500 mb-6 text-sm" id="quickAdjustName">Tên SP</p>
+            
+            <input type="hidden" id="quickAdjustId">
+            <input type="hidden" id="quickAdjustCurrentQty">
+            
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <button onclick="app.submitQuickAdjust(-1)" class="w-12 h-12 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xl font-bold transition-colors">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+                <input type="number" id="quickAdjustAmount" value="1" min="1" class="w-24 text-center px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-bold">
+                <button onclick="app.submitQuickAdjust(1)" class="w-12 h-12 rounded-full bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center text-xl font-bold transition-colors">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+            
+            <button onclick="app.closeQuickAdjust()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy & Đóng</button>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[90] flex flex-col gap-2 pointer-events-none"></div>
 
@@ -454,13 +495,14 @@
 
             checkLogin() {
                 const isLogged = sessionStorage.getItem('wms_logged_in');
-                document.getElementById('loading-screen').style.display = 'none';
                 
                 if(!isLogged) {
+                    document.getElementById('loading-screen').style.display = 'none';
                     document.getElementById('login-container').classList.remove('hidden');
                     document.getElementById('login-container').style.display = 'flex';
                     document.getElementById('app-container').style.display = 'none';
                 } else {
+                    document.getElementById('loading-screen').style.display = 'none';
                     document.getElementById('login-container').classList.add('hidden');
                     document.getElementById('login-container').style.display = 'none';
                     document.getElementById('app-container').style.display = 'flex';
@@ -488,7 +530,6 @@
                 if(u === 'admin' && p === '123') {
                     sessionStorage.setItem('wms_logged_in', 'true');
                     document.getElementById('loginError').classList.add('hidden');
-                    
                     window.location.reload(); 
                 } else {
                     document.getElementById('loginError').innerText = 'Tài khoản hoặc mật khẩu không đúng!';
@@ -504,21 +545,11 @@
             }
 
             listenToData() {
-                let dataLoaded = { products: false, categories: false, brands: false };
-                
-                const checkAllLoaded = () => {
-                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands) {
-                        document.getElementById('loading-screen').style.display = 'none';
-                    }
-                }
-
                 onValue(this.productsRef, (snapshot) => {
                     this.products = [];
                     snapshot.forEach((child) => this.products.push({ id: child.key, ...child.val() }));
                     if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
                     if(this.currentView !== 'categories') this.render();
-                    dataLoaded.products = true;
-                    checkAllLoaded();
                 });
 
                 onValue(this.categoriesRef, (snapshot) => {
@@ -526,8 +557,6 @@
                     snapshot.forEach((child) => this.categories.push({ id: child.key, ...child.val() }));
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    dataLoaded.categories = true;
-                    checkAllLoaded();
                 });
 
                 onValue(this.brandsRef, (snapshot) => {
@@ -535,8 +564,6 @@
                     snapshot.forEach((child) => this.brands.push({ id: child.key, ...child.val() }));
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    dataLoaded.brands = true;
-                    checkAllLoaded();
                 });
             }
 
@@ -579,13 +606,19 @@
                     }
                 };
 
-                document.getElementById('productSku').addEventListener('blur', (e) => fillOldDataIfExist(e.target.value.trim(), 'sku'));
                 document.getElementById('productSerial').addEventListener('blur', (e) => fillOldDataIfExist(e.target.value.trim(), 'serial'));
 
                 document.getElementById('toggleQuantity').addEventListener('change', (e) => {
                     const qtyInput = document.getElementById('productQuantity');
                     qtyInput.disabled = !e.target.checked;
                     if(!e.target.checked) qtyInput.value = 1;
+                });
+
+                document.getElementById('quickAdjustInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.triggerQuickAdjust();
+                    }
                 });
             }
 
@@ -771,7 +804,7 @@
                                 <td class="px-6 py-4 text-right align-top w-32">${qtyUI}</td>
                                 <td class="px-6 py-4 text-right font-medium text-blue-600 align-top w-32">${UI.formatCurrency(p.price)}</td>
                                 <td class="px-6 py-4 text-right align-top w-24">
-                                    <div class="flex justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="flex justify-end gap-2">
                                         <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
                                         <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
@@ -958,6 +991,92 @@
                     this.closeConfirmModal();
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
+            }
+
+            triggerQuickAdjust() {
+                const val = document.getElementById('quickAdjustInput').value.trim();
+                if (!val) {
+                    UI.showToast('Vui lòng nhập Serial hoặc Mã SP!', 'error');
+                    return;
+                }
+                this.processQuickAdjustScan(val);
+            }
+
+            processQuickAdjustScan(qrCode) {
+                document.getElementById('quickAdjustInput').value = '';
+                const product = this.products.find(p => p.sku === qrCode || p.serial === qrCode || p.code === qrCode);
+                
+                if (!product) {
+                    UI.showToast(`Không tìm thấy sản phẩm có mã: ${qrCode}`, "error");
+                    return;
+                }
+
+                if (product.trackQuantity === false) {
+                    UI.showToast("Sản phẩm này không theo dõi số lượng tồn kho!", "error");
+                    return;
+                }
+
+                document.getElementById('quickAdjustId').value = product.id;
+                document.getElementById('quickAdjustCurrentQty').value = product.quantity;
+                document.getElementById('quickAdjustTitle').innerText = product.code || 'SP';
+                document.getElementById('quickAdjustName').innerText = product.name;
+                document.getElementById('quickAdjustAmount').value = 1;
+
+                const m = document.getElementById('quickAdjustModal'); 
+                const c = document.getElementById('quickAdjustContent');
+                m.classList.remove('hidden'); void m.offsetWidth;
+                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+            }
+
+            closeQuickAdjust() {
+                const m = document.getElementById('quickAdjustModal'); 
+                const c = document.getElementById('quickAdjustContent');
+                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            async submitQuickAdjust(multiplier) {
+                const id = document.getElementById('quickAdjustId').value;
+                const currentQty = parseInt(document.getElementById('quickAdjustCurrentQty').value, 10);
+                const amount = parseInt(document.getElementById('quickAdjustAmount').value, 10);
+                const p = this.products.find(x => x.id === id);
+                
+                if (!p || isNaN(amount) || amount < 1) return;
+
+                let newQty = currentQty + (amount * multiplier);
+                if (newQty < 0) newQty = 0; 
+
+                try {
+                    await update(ref(this.db, 'users/' + this.userId + '/products/' + id), { 
+                        quantity: newQty,
+                        updatedAt: new Date().toISOString()
+                    });
+                    
+                    const actionTxt = multiplier === 1 ? 'Cộng (+)' : 'Trừ (-)';
+                    const colorTxt = multiplier === 1 ? 'text-green-600' : 'text-red-600';
+                    UI.showToast(`Đã ${actionTxt} ${amount} sản phẩm ${p.name}`);
+                    this.addQuickHistory(`<strong>${p.code || p.name}</strong>: <span class="${colorTxt} font-bold">${actionTxt} ${amount}</span> (Còn: ${newQty})`);
+                    
+                    this.closeQuickAdjust();
+                } catch (error) {
+                    UI.showToast("Lỗi khi cập nhật tồn kho", "error");
+                }
+            }
+
+            addQuickHistory(htmlMsg) {
+                const container = document.getElementById('quickActionHistory');
+                const list = document.getElementById('quickActionList');
+                container.classList.remove('hidden');
+                
+                const time = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="text-xs text-gray-400 mr-2">[${time}]</span> ${htmlMsg}`;
+                
+                list.insertBefore(li, list.firstChild);
+                
+                if (list.children.length > 5) {
+                    list.removeChild(list.lastChild);
+                }
             }
         }
 
