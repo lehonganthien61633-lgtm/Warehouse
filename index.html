@@ -14,6 +14,8 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #app-container { display: none; }
+        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
@@ -810,8 +812,8 @@
                         const qtyUI = !trackQty ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
                         tbody.innerHTML += `
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-semibold align-middle">${p.code || ''}</td>
+                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="app.processQuickAdjustScan('${p.sku || p.serial || p.code}')">
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-semibold align-middle text-blue-600 hover:underline">${p.code || ''}</td>
                                 <td class="px-6 py-3 border-b border-gray-50 text-sm align-middle">${p.name}</td>
                                 <td class="px-6 py-3 border-b border-gray-50 text-sm font-bold text-right align-middle">${qtyUI}</td>
                             </tr>`;
@@ -874,7 +876,7 @@
                                 <td class="px-6 py-4 text-right align-top w-32">${qtyUI}</td>
                                 <td class="px-6 py-4 text-right font-medium text-blue-600 align-top w-32">${UI.formatCurrency(p.price)}</td>
                                 <td class="px-6 py-4 text-right align-top w-24">
-                                    <div class="flex justify-end gap-2 opacity-100 transition-opacity">
+                                    <div class="flex justify-end gap-2">
                                         <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
                                         <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
@@ -1156,5 +1158,3 @@
     </script>
 </body>
 </html>
-Trong danh sách các sản phẩm ở phần bảng điều khiển, khi nhấn vào nó sẽ mở phần nhập/xuất để thay đổi số lượng
-Sau khi thay đổi số lượng xong thì tự động đóng phần nhập/xuất lại mà không cần phải tắt bằng dấu x như cũ
