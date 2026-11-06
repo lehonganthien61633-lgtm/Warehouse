@@ -807,6 +807,10 @@
             } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
             finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
         }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+        window.app = new WMSApp();
+    });
     </script>
 </body>
 </html>
