@@ -231,8 +231,8 @@
     <!-- Firebase & Logic script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, push, update, remove, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // UI Utilities
         const UI = {
@@ -282,27 +282,23 @@
 
             async initFirebase() {
                 try {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'wms-demo';
-                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-                        // Environment config injected here
+                    // Sử dụng trực tiếp URL database của bạn
+                    const firebaseConfig = {
+                        databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/"
                     };
 
                     const app = initializeApp(firebaseConfig);
                     const auth = getAuth(app);
-                    this.db = getFirestore(app);
+                    this.db = getDatabase(app);
 
-                    // Auth strictly before queries
-                    if (typeof __initial_auth_token !== 'undefined') {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    // Đăng nhập ẩn danh để có quyền truy cập userId
+                    await signInAnonymously(auth);
 
                     if (!auth.currentUser) throw new Error("Authentication failed");
                     this.userId = auth.currentUser.uid;
                     
-                    // Strictly use correct path structures
-                    this.productsRef = collection(this.db, 'artifacts', appId, 'users', this.userId, 'products');
+                    // Khởi tạo Reference tới Realtime Database
+                    this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
                     
                     this.listenToData();
                 } catch (error) {
@@ -313,10 +309,10 @@
             }
 
             listenToData() {
-                onSnapshot(this.productsRef, (snapshot) => {
+                onValue(this.productsRef, (snapshot) => {
                     this.products = [];
-                    snapshot.forEach((doc) => {
-                        this.products.push({ id: doc.id, ...doc.data() });
+                    snapshot.forEach((childSnapshot) => {
+                        this.products.push({ id: childSnapshot.key, ...childSnapshot.val() });
                     });
                     
                     // Hide loading
@@ -560,15 +556,18 @@
                     const isDuplicate = this.products.some(p => p.code === code && p.id !== id);
                     if(isDuplicate) {
                         UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error");
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
                         return;
                     }
 
                     if (id) {
-                        const docRef = doc(this.productsRef, id);
-                        await updateDoc(docRef, productData);
+                        const docRef = ref(this.db, 'users/' + this.userId + '/products/' + id);
+                        await update(docRef, productData);
                         UI.showToast("Cập nhật thành công!");
                     } else {
-                        await addDoc(this.productsRef, { ...productData, createdAt: new Date().toISOString() });
+                        const newDocRef = push(this.productsRef);
+                        await set(newDocRef, { ...productData, createdAt: new Date().toISOString() });
                         UI.showToast("Thêm mới thành công!");
                     }
                     this.closeModal();
@@ -615,8 +614,8 @@
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
                 try {
-                    const docRef = doc(this.productsRef, this.deleteCandidateId);
-                    await deleteDoc(docRef);
+                    const docRef = ref(this.db, 'users/' + this.userId + '/products/' + this.deleteCandidateId);
+                    await remove(docRef);
                     UI.showToast("Đã xóa sản phẩm thành công");
                     this.closeConfirmModal();
                 } catch (error) {
