@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý kho WMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .toast-enter { transform: translateX(100%); opacity: 0; }
+        .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s ease-out; }
+        .toast-exit { transform: translateX(0); opacity: 1; }
+        .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
+        
+        /* Hide scrollbar for clean UI but allow scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="bg-slate-800 text-white w-full md:w-64 flex-shrink-0 md:h-full flex flex-col transition-all duration-300 z-20">
+        <div class="p-4 flex items-center justify-between md:justify-center border-b border-slate-700">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-boxes-stacked text-blue-400"></i>
+                <span class="tracking-wide">Kho Hàng Pro</span>
+            </h1>
+            <button id="mobileMenuBtn" class="md:hidden text-gray-300 hover:text-white">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </div>
+        <nav id="sidebarNav" class="hidden md:flex flex-col flex-1 p-4 gap-2">
+            <button onclick="app.switchView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600 text-white transition-colors">
+                <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                <span class="font-medium">Bảng điều khiển</span>
+            </button>
+            <button onclick="app.switchView('products')" id="nav-products" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+                <i class="fa-solid fa-box w-5 text-center"></i>
+                <span class="font-medium">Quản lý sản phẩm</span>
+            </button>
+        </nav>
+        <div class="p-4 text-xs text-slate-500 text-center border-t border-slate-700 hidden md:block">
+            &copy; 2026 WMS System<br>Đã kết nối Cloud
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 h-full overflow-y-auto no-scrollbar relative">
+        <!-- Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-10 px-6 py-4 flex justify-between items-center">
+            <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">Bảng điều khiển</h2>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-6 max-w-7xl mx-auto">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="space-y-6">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-blue-500 flex items-center">
+                        <div class="p-3 rounded-full bg-blue-50 text-blue-500 mr-4">
+                            <i class="fa-solid fa-cubes text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Tổng mặt hàng</p>
+                            <p id="stat-total-items" class="text-2xl font-bold text-gray-800">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-green-500 flex items-center">
+                        <div class="p-3 rounded-full bg-green-50 text-green-500 mr-4">
+                            <i class="fa-solid fa-coins text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Tổng giá trị kho</p>
+                            <p id="stat-total-value" class="text-2xl font-bold text-gray-800">0 ₫</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-red-500 flex items-center">
+                        <div class="p-3 rounded-full bg-red-50 text-red-500 mr-4">
+                            <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Sắp hết hàng (< 10)</p>
+                            <p id="stat-low-stock" class="text-2xl font-bold text-gray-800">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Alert Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-red-50 flex justify-between items-center">
+                        <h3 class="font-bold text-red-700 flex items-center gap-2">
+                            <i class="fa-solid fa-bell"></i> Cảnh báo tồn kho thấp
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-sm">
+                                    <th class="px-6 py-3 font-medium">Mã SP</th>
+                                    <th class="px-6 py-3 font-medium">Tên sản phẩm</th>
+                                    <th class="px-6 py-3 font-medium text-right">Số lượng tồn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowStockTableBody" class="divide-y divide-gray-100">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                        <div id="lowStockEmpty" class="hidden p-8 text-center text-gray-500">
+                            <i class="fa-solid fa-check-circle text-4xl text-green-400 mb-3"></i>
+                            <p>Không có sản phẩm nào sắp hết hàng.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: PRODUCTS -->
+            <div id="view-products" class="hidden space-y-4">
+                <!-- Toolbar -->
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="relative w-full sm:w-96">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchInput" placeholder="Tìm kiếm theo Tên hoặc Mã SP..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow">
+                    </div>
+                    <button onclick="app.openModal()" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+                    </button>
+                </div>
+
+                <!-- Products Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
+                                    <th class="px-6 py-4 font-medium">Mã SP</th>
+                                    <th class="px-6 py-4 font-medium">Tên sản phẩm</th>
+                                    <th class="px-6 py-4 font-medium text-right">Số lượng</th>
+                                    <th class="px-6 py-4 font-medium text-right">Đơn giá</th>
+                                    <th class="px-6 py-4 font-medium text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody" class="divide-y divide-gray-100 text-gray-700">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                        
+                        <!-- Loading State -->
+                        <div id="tableLoading" class="p-12 text-center text-gray-400">
+                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-3"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="tableEmpty" class="hidden p-12 text-center text-gray-500">
+                            <i class="fa-solid fa-box-open text-5xl text-gray-300 mb-4"></i>
+                            <p class="text-lg font-medium">Không tìm thấy sản phẩm nào</p>
+                            <p class="text-sm mt-1">Hãy thêm sản phẩm mới vào kho của bạn.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 transform scale-95 transition-transform duration-300" id="productModalContent">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-gray-800" id="modalTitle">Thêm Sản Phẩm Mới</h3>
+                <button onclick="app.closeModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="productForm" class="p-6 space-y-4">
+                <input type="hidden" id="productId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã Sản Phẩm *</label>
+                    <input type="text" id="productCode" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="VD: SP001">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên Sản Phẩm *</label>
+                    <input type="text" id="productName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên sản phẩm...">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Số Lượng *</label>
+                        <input type="number" id="productQuantity" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Đơn Giá (VNĐ) *</label>
+                        <input type="number" id="productPrice" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
+                    <button type="button" onclick="app.closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
+                    <button type="submit" id="saveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6" id="confirmModalContent">
+            <div class="w-16 h-16 rounded-full bg-red-100 text-red-500 flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-trash-can text-2xl"></i>
+            </div>
+            <h3 class="font-bold text-xl text-gray-800 mb-2">Xóa sản phẩm?</h3>
+            <p class="text-gray-500 mb-6 text-sm">Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa sản phẩm này khỏi kho?</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="app.closeConfirmModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy</button>
+                <button id="confirmDeleteBtn" class="px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors w-full">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Firebase & Logic script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // UI Utilities
+        const UI = {
+            formatCurrency: (amount) => {
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            },
+            showToast: (message, type = 'success') => {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                
+                const bg = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+                const icon = type === 'success' ? 'fa-check' : (type === 'error' ? 'fa-xmark' : 'fa-info');
+                
+                toast.className = `toast-enter flex items-center gap-3 ${bg} text-white px-5 py-3 rounded-lg shadow-lg pointer-events-auto`;
+                toast.innerHTML = `<i class="fa-solid ${icon}"></i><span class="font-medium text-sm">${message}</span>`;
+                
+                container.appendChild(toast);
+                
+                // Animate in
+                requestAnimationFrame(() => {
+                    toast.classList.remove('toast-enter');
+                    toast.classList.add('toast-enter-active');
+                });
+                
+                setTimeout(() => {
+                    toast.classList.remove('toast-enter-active');
+                    toast.classList.add('toast-exit-active');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+        };
+
+        // Application Logic
+        class WMSApp {
+            constructor() {
+                this.products = [];
+                this.searchQuery = '';
+                this.currentView = 'dashboard';
+                this.db = null;
+                this.userId = null;
+                this.productsRef = null;
+                this.deleteCandidateId = null;
+
+                this.initFirebase();
+                this.bindEvents();
+            }
+
+            async initFirebase() {
+                try {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'wms-demo';
+                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                        // Environment config injected here
+                    };
+
+                    const app = initializeApp(firebaseConfig);
+                    const auth = getAuth(app);
+                    this.db = getFirestore(app);
+
+                    // Auth strictly before queries
+                    if (typeof __initial_auth_token !== 'undefined') {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    if (!auth.currentUser) throw new Error("Authentication failed");
+                    this.userId = auth.currentUser.uid;
+                    
+                    // Strictly use correct path structures
+                    this.productsRef = collection(this.db, 'artifacts', appId, 'users', this.userId, 'products');
+                    
+                    this.listenToData();
+                } catch (error) {
+                    console.error("Firebase init error:", error);
+                    UI.showToast("Không thể kết nối đến máy chủ", "error");
+                    document.getElementById('tableLoading').innerHTML = '<p class="text-red-500"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><br>Lỗi kết nối cơ sở dữ liệu.</p>';
+                }
+            }
+
+            listenToData() {
+                onSnapshot(this.productsRef, (snapshot) => {
+                    this.products = [];
+                    snapshot.forEach((doc) => {
+                        this.products.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    // Hide loading
+                    document.getElementById('tableLoading').classList.add('hidden');
+                    
+                    this.render();
+                }, (error) => {
+                    console.error("Error fetching data:", error);
+                    UI.showToast("Lỗi đồng bộ dữ liệu", "error");
+                });
+            }
+
+            bindEvents() {
+                // Mobile Menu Toggle
+                document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                    const nav = document.getElementById('sidebarNav');
+                    nav.classList.toggle('hidden');
+                });
+
+                // Search Input
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchQuery = e.target.value.toLowerCase();
+                    this.renderProducts();
+                });
+
+                // Form Submit
+                document.getElementById('productForm').addEventListener('submit', (e) => this.handleSaveProduct(e));
+
+                // Modal clicks outside to close
+                document.getElementById('productModal').addEventListener('click', (e) => {
+                    if(e.target === e.currentTarget) this.closeModal();
+                });
+                document.getElementById('confirmModal').addEventListener('click', (e) => {
+                    if(e.target === e.currentTarget) this.closeConfirmModal();
+                });
+                
+                // Confirm delete button
+                document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+                    this.executeDelete();
+                });
+            }
+
+            switchView(viewName) {
+                this.currentView = viewName;
+                
+                // Update Nav UI
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
+                });
+                
+                const activeBtn = document.getElementById(`nav-${viewName}`);
+                if(activeBtn) {
+                    activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
+                    activeBtn.classList.add('bg-blue-600', 'text-white');
+                }
+
+                // Update View Visibility
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('view-products').classList.add('hidden');
+                document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+                // Update Title
+                document.getElementById('pageTitle').innerText = viewName === 'dashboard' ? 'Bảng điều khiển' : 'Quản lý sản phẩm';
+
+                // Re-render
+                this.render();
+                
+                // Close mobile menu if open
+                if(window.innerWidth < 768) {
+                    document.getElementById('sidebarNav').classList.add('hidden');
+                }
+            }
+
+            render() {
+                if (this.currentView === 'dashboard') {
+                    this.renderDashboard();
+                } else {
+                    this.renderProducts();
+                }
+            }
+
+            renderDashboard() {
+                let totalItems = 0;
+                let totalValue = 0;
+                let lowStockItems = [];
+
+                this.products.forEach(p => {
+                    const qty = parseInt(p.quantity) || 0;
+                    const price = parseFloat(p.price) || 0;
+                    
+                    totalItems += qty;
+                    totalValue += (qty * price);
+                    
+                    if (qty < 10) {
+                        lowStockItems.push(p);
+                    }
+                });
+
+                document.getElementById('stat-total-items').innerText = totalItems.toLocaleString('vi-VN');
+                document.getElementById('stat-total-value').innerText = UI.formatCurrency(totalValue);
+                document.getElementById('stat-low-stock').innerText = lowStockItems.length;
+
+                // Render Low Stock Table
+                const tbody = document.getElementById('lowStockTableBody');
+                const emptyState = document.getElementById('lowStockEmpty');
+                
+                tbody.innerHTML = '';
+                
+                if (lowStockItems.length === 0) {
+                    tbody.parentElement.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                } else {
+                    tbody.parentElement.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+                    
+                    lowStockItems.forEach(p => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-red-50/50 transition-colors";
+                        tr.innerHTML = `
+                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-semibold">${p.code}</td>
+                            <td class="px-6 py-3 border-t border-gray-100 text-sm">${p.name}</td>
+                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-bold text-red-600 text-right">${p.quantity}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            }
+
+            renderProducts() {
+                const tbody = document.getElementById('productsTableBody');
+                const emptyState = document.getElementById('tableEmpty');
+                tbody.innerHTML = '';
+
+                const filtered = this.products.filter(p => {
+                    return p.name.toLowerCase().includes(this.searchQuery) || 
+                           p.code.toLowerCase().includes(this.searchQuery);
+                });
+
+                if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
+                    emptyState.classList.remove('hidden');
+                    tbody.parentElement.classList.add('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    tbody.parentElement.classList.remove('hidden');
+                    
+                    filtered.forEach(p => {
+                        const isLowStock = p.quantity < 10;
+                        const qtyBadgeClass = isLowStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+                        
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-50 transition-colors group";
+                        tr.innerHTML = `
+                            <td class="px-6 py-4 font-semibold text-gray-800">${p.code}</td>
+                            <td class="px-6 py-4 font-medium text-gray-700">${p.name}</td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="px-3 py-1 rounded-full text-xs font-bold ${qtyBadgeClass}">
+                                    ${p.quantity}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right font-medium text-blue-600">${UI.formatCurrency(p.price)}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex justify-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa">
+                                        <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                    </button>
+                                    <button onclick="app.requestDelete('${p.id}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa">
+                                        <i class="fa-solid fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            }
+
+            openModal(id = null) {
+                const modal = document.getElementById('productModal');
+                const content = document.getElementById('productModalContent');
+                const title = document.getElementById('modalTitle');
+                const form = document.getElementById('productForm');
+                
+                form.reset();
+                document.getElementById('productId').value = '';
+
+                if (id) {
+                    title.innerText = 'Sửa Sản Phẩm';
+                    const product = this.products.find(p => p.id === id);
+                    if(product) {
+                        document.getElementById('productId').value = product.id;
+                        document.getElementById('productCode').value = product.code;
+                        document.getElementById('productName').value = product.name;
+                        document.getElementById('productQuantity').value = product.quantity;
+                        document.getElementById('productPrice').value = product.price;
+                    }
+                } else {
+                    title.innerText = 'Thêm Sản Phẩm Mới';
+                }
+
+                modal.classList.remove('hidden');
+                // Trigger reflow
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }
+
+            closeModal() {
+                const modal = document.getElementById('productModal');
+                const content = document.getElementById('productModalContent');
+                
+                modal.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+
+            async handleSaveProduct(e) {
+                e.preventDefault();
+                
+                const btn = document.getElementById('saveBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+                const id = document.getElementById('productId').value;
+                const code = document.getElementById('productCode').value.toUpperCase().trim();
+                const name = document.getElementById('productName').value.trim();
+                const quantity = parseInt(document.getElementById('productQuantity').value, 10);
+                const price = parseFloat(document.getElementById('productPrice').value);
+
+                const productData = {
+                    code, name, quantity, price, updatedAt: new Date().toISOString()
+                };
+
+                try {
+                    // Check duplicate code if new or changed
+                    const isDuplicate = this.products.some(p => p.code === code && p.id !== id);
+                    if(isDuplicate) {
+                        UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error");
+                        return;
+                    }
+
+                    if (id) {
+                        const docRef = doc(this.productsRef, id);
+                        await updateDoc(docRef, productData);
+                        UI.showToast("Cập nhật thành công!");
+                    } else {
+                        await addDoc(this.productsRef, { ...productData, createdAt: new Date().toISOString() });
+                        UI.showToast("Thêm mới thành công!");
+                    }
+                    this.closeModal();
+                } catch (error) {
+                    console.error("Save error:", error);
+                    UI.showToast("Có lỗi xảy ra khi lưu!", "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
+                }
+            }
+
+            requestDelete(id) {
+                this.deleteCandidateId = id;
+                const modal = document.getElementById('confirmModal');
+                const content = document.getElementById('confirmModalContent');
+                
+                modal.classList.remove('hidden');
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }
+
+            closeConfirmModal() {
+                this.deleteCandidateId = null;
+                const modal = document.getElementById('confirmModal');
+                const content = document.getElementById('confirmModalContent');
+                
+                modal.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+
+            async executeDelete() {
+                if(!this.deleteCandidateId) return;
+                
+                const btn = document.getElementById('confirmDeleteBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+                try {
+                    const docRef = doc(this.productsRef, this.deleteCandidateId);
+                    await deleteDoc(docRef);
+                    UI.showToast("Đã xóa sản phẩm thành công");
+                    this.closeConfirmModal();
+                } catch (error) {
+                    console.error("Delete error:", error);
+                    UI.showToast("Lỗi khi xóa sản phẩm", "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Xóa';
+                }
+            }
+        }
+
+        // Initialize application when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new WMSApp();
+        });
+    </script>
+</body>
+</html>
