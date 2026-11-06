@@ -126,6 +126,7 @@
             </div>
 
             <!-- VIEW: PRODUCTS -->
+            <!-- VIEW: PRODUCTS -->
             <div id="view-products" class="hidden space-y-4">
                 <!-- Toolbar -->
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -137,7 +138,44 @@
                         <i class="fa-solid fa-plus"></i> Thêm sản phẩm
                     </button>
                 </div>
-                <div id="view-categories" class="hidden space-y-6">
+
+                <!-- Products Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
+                                    <th class="px-6 py-4 font-medium">Mã SP</th>
+                                    <th class="px-6 py-4 font-medium">Phân loại</th>
+                                    <th class="px-6 py-4 font-medium">Tên sản phẩm</th>
+                                    <th class="px-6 py-4 font-medium text-right">Số lượng</th>
+                                    <th class="px-6 py-4 font-medium text-right">Đơn giá</th>
+                                    <th class="px-6 py-4 font-medium text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody" class="divide-y divide-gray-100 text-gray-700">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                        
+                        <!-- Loading State -->
+                        <div id="tableLoading" class="p-12 text-center text-gray-400">
+                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-3"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="tableEmpty" class="hidden p-12 text-center text-gray-500">
+                            <i class="fa-solid fa-box-open text-5xl text-gray-300 mb-4"></i>
+                            <p class="text-lg font-medium">Không tìm thấy sản phẩm nào</p>
+                            <p class="text-sm mt-1">Hãy thêm sản phẩm mới vào kho của bạn.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: CATEGORIES & BRANDS -->
+            <div id="view-categories" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Categories Table -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -175,40 +213,6 @@
                                 </thead>
                                 <tbody id="brandsTableBody" class="divide-y divide-gray-100"></tbody>
                             </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-                <!-- Products Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
-                                    <th class="px-6 py-4 font-medium">Mã SP</th>
-                                    <th class="px-6 py-4 font-medium">Phân loại</th>
-                                    <th class="px-6 py-4 font-medium">Tên sản phẩm</th>
-                                    <th class="px-6 py-4 font-medium text-right">Số lượng</th>
-                                    <th class="px-6 py-4 font-medium text-right">Đơn giá</th>
-                                    <th class="px-6 py-4 font-medium text-center">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productsTableBody" class="divide-y divide-gray-100 text-gray-700">
-                                <!-- Rendered via JS -->
-                            </tbody>
-                        </table>
-                        
-                        <!-- Loading State -->
-                        <div id="tableLoading" class="p-12 text-center text-gray-400">
-                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-3"></i>
-                            <p>Đang tải dữ liệu...</p>
-                        </div>
-
-                        <!-- Empty State -->
-                        <div id="tableEmpty" class="hidden p-12 text-center text-gray-500">
-                            <i class="fa-solid fa-box-open text-5xl text-gray-300 mb-4"></i>
-                            <p class="text-lg font-medium">Không tìm thấy sản phẩm nào</p>
-                            <p class="text-sm mt-1">Hãy thêm sản phẩm mới vào kho của bạn.</p>
                         </div>
                     </div>
                 </div>
