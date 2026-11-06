@@ -312,7 +312,7 @@
                     <input type="number" id="productQuantity" min="1" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400" placeholder="1">
                 </div>
 
-                <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6 sticky bottom-0 bg-white">
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6 sticky bottom-0 bg-white z-10">
                     <button type="button" onclick="app.closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
                     <button type="submit" id="saveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-save"></i> Lưu
@@ -368,6 +368,7 @@
             </div>
         </div>
     </div>
+
     <!-- Scanner Modal -->
     <div id="scannerModal" class="fixed inset-0 bg-black/80 z-[70] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 mx-4" id="scannerModalContent">
@@ -439,7 +440,8 @@
                 this.brandsRef = null;
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
-                this.html5QrcodeScanner = null
+                this.html5QrcodeScanner = null;
+
                 this.initFirebase();
                 this.bindEvents();
             }
@@ -617,7 +619,6 @@
                 let totalItems = 0; let totalValue = 0; let lowStockItems = [];
                 this.products.forEach(p => {
                     const trackQty = p.trackQuantity !== false;
-                    // Nếu có track số lượng thì lấy số lượng thật, nếu không track thì mặc định tính là 1
                     const qty = trackQty ? (parseInt(p.quantity) || 0) : 1;
                     
                     totalItems += qty;
@@ -716,7 +717,7 @@
                 const qInput = document.getElementById('productQuantity');
                 tQCheckbox.checked = true;
                 qInput.disabled = false;
-                qInput.value = ''; // Reset rỗng để placeholder hoạt động
+                qInput.value = '';
 
                 if (id) {
                     document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
@@ -770,8 +771,6 @@
                 }
 
                 const trackQuantity = document.getElementById('toggleQuantity').checked;
-                
-                // Xử lý logic số lượng (nếu tắt theo dõi -> mặc định 1)
                 let finalQty = 1;
                 if (trackQuantity) {
                     finalQty = parseInt(document.getElementById('productQuantity').value, 10);
@@ -876,23 +875,21 @@
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
             }
-        }
-        openScanner() {
+
+            openScanner() {
                 const modal = document.getElementById('scannerModal');
                 const content = document.getElementById('scannerModalContent');
                 
                 modal.classList.remove('hidden');
-                void modal.offsetWidth; // trigger reflow
+                void modal.offsetWidth;
                 modal.classList.remove('opacity-0');
                 content.classList.remove('scale-95');
                 content.classList.add('scale-100');
 
-                // Initialize Scanner
                 if(this.html5QrcodeScanner) {
                     this.html5QrcodeScanner.clear();
                 }
                 
-                // Cấu hình Html5Qrcode
                 this.html5QrcodeScanner = new Html5Qrcode("reader");
                 const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 };
 
@@ -900,14 +897,11 @@
                     { facingMode: "environment" }, 
                     config,
                     (decodedText) => {
-                        // Success callback
                         document.getElementById('productSerial').value = decodedText;
                         UI.showToast("Quét mã thành công!");
                         this.closeScanner();
                     },
-                    (errorMessage) => {
-                        // Bỏ qua lỗi không tìm thấy mã liên tục
-                    }
+                    (errorMessage) => { }
                 ).catch(err => {
                     console.error("Camera error:", err);
                     UI.showToast("Không thể khởi động Camera. Vui lòng cấp quyền truy cập.", "error");
@@ -932,6 +926,7 @@
                     modal.classList.add('hidden');
                 }, 300);
             }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new WMSApp();
@@ -939,3 +934,6 @@
     </script>
 </body>
 </html>
+Trong danh sách sản phẩm, nếu sản phẩm k có hãng, k có model, k có serial thì không hiện logo của nó lên
+Ở Serial NUmber thì có quét barcode k thay barcode thì serial number là số đó, còn ở Barcode mới là quét mã của barcode
+Nút sửa/xóa nằm ở góc ngoài cùng bên phải, không phải nẳm sát lề
