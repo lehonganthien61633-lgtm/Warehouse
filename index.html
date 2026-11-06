@@ -14,8 +14,6 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        #app-container { display: none; }
-        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
@@ -253,6 +251,7 @@
             <div class="overflow-y-auto flex-1 p-6">
                 <form id="productForm" class="space-y-4" onsubmit="return false;">
                     <input type="hidden" id="productId">
+                    <input type="hidden" id="productOldCode">
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -410,7 +409,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, onValue, push, update, remove, set, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, remove, set, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
         
         const UI = {
             formatCurrency: (amount) => {
@@ -584,6 +583,10 @@
                 let code = '';
                 for(let i = 0; i < length; i++) code += Math.floor(Math.random() * 10).toString();
                 return code;
+            }
+            
+            cleanKey(str) {
+                return str.replace(/[.#$[\]\s]/g, '_');
             }
 
             populateDropdowns() {
@@ -768,6 +771,7 @@
             openModal(id = null) {
                 document.getElementById('productForm').reset();
                 document.getElementById('productId').value = '';
+                document.getElementById('productOldCode').value = '';
                 document.getElementById('productCode').value = '';
                 document.getElementById('productSku').value = '';
                 
@@ -782,6 +786,7 @@
                     const p = this.products.find(x => x.id === id);
                     if(p) {
                         document.getElementById('productId').value = p.id;
+                        document.getElementById('productOldCode').value = p.code;
                         document.getElementById('productCategory').value = p.category || '';
                         document.getElementById('productBrand').value = p.brand || '';
                         document.getElementById('productCode').value = p.code || '';
@@ -818,13 +823,15 @@
                 if(!form.checkValidity()) { form.reportValidity(); return; }
 
                 const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-                const id = document.getElementById('productId').value;
+                
+                const originalId = document.getElementById('productId').value;
+                const oldCode = document.getElementById('productOldCode').value;
                 const category = document.getElementById('productCategory').value;
                 
                 let code = document.getElementById('productCode').value.toUpperCase().trim();
                 let sku = document.getElementById('productSku').value.trim();
                 
-                if (!id && !code) {
+                if (!originalId && !code) {
                     const catObj = this.categories.find(c => c.id === category);
                     code = this.generateProductCode(catObj ? catObj.prefix : 'KH');
                 }
@@ -840,7 +847,11 @@
                     if(isNaN(finalQty) || finalQty < 1) finalQty = 1; 
                 }
 
+                // Dùng chính Mã SP (code) làm Key lưu trên Firebase để thay thế ID ngẫu nhiên
+                const productKey = code;
+
                 const productData = {
+                    id: productKey, // ID giờ chính là Code
                     category,
                     brand: document.getElementById('productBrand').value,
                     code,
@@ -857,14 +868,27 @@
                 };
 
                 try {
-                    if (this.products.some(p => p.code === code && p.id !== id)) {
+                    // Nếu đổi mã code (ở tương lai) thì chặn nếu trùng
+                    if (this.products.some(p => p.code === code && p.id !== originalId)) {
                         UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); 
                         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
                         return;
                     }
-                    if (id) await update(ref(this.db, 'products/' + id), productData);
-                    else await set(push(this.productsRef), { ...productData, createdAt: new Date().toISOString() });
-                    UI.showToast(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
+
+                    if (originalId) {
+                        // Sửa sản phẩm
+                        if (oldCode && oldCode !== code) {
+                            // Xóa node cũ nếu mã code bị đổi
+                            await remove(ref(this.db, 'products/' + oldCode));
+                        }
+                        await set(ref(this.db, 'products/' + productKey), productData);
+                    } else {
+                        // Thêm sản phẩm mới bằng SET thẳng vào mã code
+                        productData.createdAt = new Date().toISOString();
+                        await set(ref(this.db, 'products/' + productKey), productData);
+                    }
+                    
+                    UI.showToast(originalId ? "Cập nhật thành công!" : "Thêm mới thành công!");
                     this.closeModal();
                 } catch (error) {
                     UI.showToast("Có lỗi xảy ra khi lưu!", "error");
@@ -905,11 +929,18 @@
                 const prefix = document.getElementById('configPrefix').value.trim().toUpperCase();
                 
                 try {
+                    const safeKey = this.cleanKey(name); // Dùng tên làm Key
+                    
                     if(type === 'category') {
-                        if(this.categories.some(c => c.prefix === prefix)) { UI.showToast("Mã viết tắt đã tồn tại!", "error"); return; }
-                        await set(push(this.categoriesRef), { name, prefix });
+                        if(this.categories.some(c => c.prefix === prefix || c.id === safeKey)) { 
+                            UI.showToast("Phân loại hoặc Mã viết tắt đã tồn tại!", "error"); return; 
+                        }
+                        await set(ref(this.db, 'categories/' + safeKey), { name, prefix, id: safeKey });
                     } else if (type === 'brand') {
-                        await set(push(this.brandsRef), { name });
+                        if(this.brands.some(b => b.id === safeKey)) {
+                            UI.showToast("Hãng sản xuất này đã tồn tại!", "error"); return; 
+                        }
+                        await set(ref(this.db, 'brands/' + safeKey), { name, id: safeKey });
                     }
                     UI.showToast("Thêm mới thành công!");
                     this.closeConfigModal();
