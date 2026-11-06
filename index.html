@@ -14,6 +14,8 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #app-container { display: none; }
+        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
@@ -24,22 +26,22 @@
         <p class="text-gray-300 font-medium tracking-wide">Đang tải hệ thống...</p>
     </div>
 
-    <!-- VIEW: LOGIN -->
+    <!-- VIEW: LOGIN/REGISTER -->
     <div id="login-container" class="w-full h-full flex-col items-center justify-center bg-slate-800 px-4 z-50 fixed inset-0 hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
             <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 <i class="fa-solid fa-boxes-stacked"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Đăng nhập WMS</h2>
-            <p class="text-gray-500 text-sm mb-6">Đăng nhập để đồng bộ kho hàng.</p>
+            <h2 id="authTitle" class="text-2xl font-bold text-gray-800 mb-2">Đăng nhập WMS</h2>
+            <p class="text-gray-500 text-sm mb-6">Đồng bộ dữ liệu an toàn trên Firebase.</p>
             
             <form id="loginForm" class="space-y-4">
                 <div class="text-left">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tài khoản (vd: admin)</label>
-                    <input type="text" id="username" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tài khoản...">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tài khoản (Tên gian hàng)</label>
+                    <input type="text" id="username" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="vd: shop123">
                 </div>
                 <div class="text-left relative">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu (vd: 123)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
                     <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập mật khẩu...">
                 </div>
                 <div id="loginError" class="text-red-500 text-sm hidden font-medium text-left">Tài khoản hoặc mật khẩu không đúng!</div>
@@ -47,6 +49,10 @@
                     Đăng nhập hệ thống
                 </button>
             </form>
+            <div class="mt-4 pt-4 border-t border-gray-100 text-sm">
+                <span id="authToggleText" class="text-gray-500">Chưa có tài khoản?</span>
+                <button type="button" onclick="app.toggleAuthMode()" id="toggleAuthBtn" class="text-blue-600 font-semibold ml-1 hover:underline">Đăng ký ngay</button>
+            </div>
         </div>
     </div>
 
@@ -124,11 +130,11 @@
                         </div>
                     </div>
 
-                    <!-- Quét nhanh điều chỉnh tồn kho (Thay bằng nhập Serial) -->
+                    <!-- Quét nhanh điều chỉnh tồn kho (Thay bằng nhập Serial/Mã) -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div>
                             <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng</h3>
-                            <p class="text-sm text-gray-500 mt-1">Nhập Serial hoặc Mã SP để xuất / nhập kho trực tiếp.</p>
+                            <p class="text-sm text-gray-500 mt-1">Nhập Serial / SKU / Mã SP để xuất / nhập kho trực tiếp.</p>
                         </div>
                         <div class="w-full sm:w-auto flex gap-2">
                             <input type="text" id="quickAdjustInput" class="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Nhập Serial / Mã SP...">
@@ -138,7 +144,7 @@
                         </div>
                     </div>
 
-                    <!-- Lịch sử thao tác quét -->
+                    <!-- Lịch sử thao tác điều chỉnh -->
                     <div id="quickActionHistory" class="bg-blue-50 border border-blue-100 rounded-xl p-4 hidden">
                         <h4 class="text-sm font-bold text-blue-800 mb-2"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Lịch sử điều chỉnh gần nhất</h4>
                         <ul id="quickActionList" class="text-sm text-gray-600 space-y-1 max-h-32 overflow-y-auto no-scrollbar"></ul>
@@ -429,7 +435,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, onValue, push, update, remove, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, update, remove, set, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
         
         const UI = {
             formatCurrency: (amount) => {
@@ -474,6 +480,7 @@
                 
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
+                this.isRegisterMode = false;
                 
                 this.initApp();
                 this.bindEvents();
@@ -494,21 +501,20 @@
             }
 
             checkLogin() {
-                const isLogged = sessionStorage.getItem('wms_logged_in');
+                const storedUser = localStorage.getItem('wms_logged_username');
                 
-                if(!isLogged) {
+                if(!storedUser) {
                     document.getElementById('loading-screen').style.display = 'none';
                     document.getElementById('login-container').classList.remove('hidden');
                     document.getElementById('login-container').style.display = 'flex';
                     document.getElementById('app-container').style.display = 'none';
                 } else {
-                    document.getElementById('loading-screen').style.display = 'none';
                     document.getElementById('login-container').classList.add('hidden');
                     document.getElementById('login-container').style.display = 'none';
                     document.getElementById('app-container').style.display = 'flex';
                     document.getElementById('app-container').classList.remove('hidden');
                     
-                    this.userId = 'admin_wms_demo';
+                    this.userId = storedUser;
                     
                     this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
                     this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
@@ -518,38 +524,93 @@
                 }
             }
 
+            toggleAuthMode() {
+                this.isRegisterMode = !this.isRegisterMode;
+                const btn = document.getElementById('loginBtn');
+                const toggleBtn = document.getElementById('toggleAuthBtn');
+                const toggleText = document.getElementById('authToggleText');
+                const title = document.getElementById('authTitle');
+
+                if (this.isRegisterMode) {
+                    title.innerText = 'Đăng ký Tài khoản';
+                    btn.innerText = 'Đăng ký & Đăng nhập';
+                    toggleText.innerText = 'Đã có tài khoản?';
+                    toggleBtn.innerText = 'Đăng nhập ngay';
+                } else {
+                    title.innerText = 'Đăng nhập WMS';
+                    btn.innerText = 'Đăng nhập hệ thống';
+                    toggleText.innerText = 'Chưa có tài khoản?';
+                    toggleBtn.innerText = 'Đăng ký ngay';
+                }
+                document.getElementById('loginError').classList.add('hidden');
+            }
+
             async handleLogin(e) {
                 e.preventDefault();
                 const u = document.getElementById('username').value.trim();
                 const p = document.getElementById('password').value.trim();
                 const btn = document.getElementById('loginBtn');
+                const errorEl = document.getElementById('loginError');
                 
+                const safeUsername = u.replace(/[.#$[\]\s]/g, '_'); 
+
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Xử lý...';
+                errorEl.classList.add('hidden');
 
-                if(u === 'admin' && p === '123') {
-                    sessionStorage.setItem('wms_logged_in', 'true');
-                    document.getElementById('loginError').classList.add('hidden');
-                    window.location.reload(); 
-                } else {
-                    document.getElementById('loginError').innerText = 'Tài khoản hoặc mật khẩu không đúng!';
-                    document.getElementById('loginError').classList.remove('hidden');
+                try {
+                    const userRef = ref(this.db, 'accounts/' + safeUsername);
+                    const snapshot = await get(userRef);
+                    const userData = snapshot.val();
+
+                    if (this.isRegisterMode) {
+                        if (userData) {
+                            errorEl.innerText = 'Tài khoản này đã tồn tại!';
+                            errorEl.classList.remove('hidden');
+                        } else {
+                            await set(userRef, { password: btoa(p) });
+                            localStorage.setItem('wms_logged_username', safeUsername);
+                            window.location.reload();
+                        }
+                    } else {
+                        if (userData && userData.password === btoa(p)) {
+                            localStorage.setItem('wms_logged_username', safeUsername);
+                            window.location.reload();
+                        } else {
+                            errorEl.innerText = 'Tài khoản hoặc mật khẩu không đúng!';
+                            errorEl.classList.remove('hidden');
+                        }
+                    }
+                } catch (err) {
+                    errorEl.innerText = 'Lỗi kết nối Firebase!';
+                    errorEl.classList.remove('hidden');
+                } finally {
                     btn.disabled = false;
-                    btn.innerText = 'Đăng nhập hệ thống';
+                    btn.innerText = this.isRegisterMode ? 'Đăng ký & Đăng nhập' : 'Đăng nhập hệ thống';
                 }
             }
 
             logout() {
-                sessionStorage.removeItem('wms_logged_in');
+                localStorage.removeItem('wms_logged_username');
                 window.location.reload();
             }
 
             listenToData() {
+                let dataLoaded = { products: false, categories: false, brands: false };
+                
+                const checkAllLoaded = () => {
+                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands) {
+                        document.getElementById('loading-screen').style.display = 'none';
+                    }
+                }
+
                 onValue(this.productsRef, (snapshot) => {
                     this.products = [];
                     snapshot.forEach((child) => this.products.push({ id: child.key, ...child.val() }));
                     if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
                     if(this.currentView !== 'categories') this.render();
+                    dataLoaded.products = true;
+                    checkAllLoaded();
                 });
 
                 onValue(this.categoriesRef, (snapshot) => {
@@ -557,6 +618,8 @@
                     snapshot.forEach((child) => this.categories.push({ id: child.key, ...child.val() }));
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
+                    dataLoaded.categories = true;
+                    checkAllLoaded();
                 });
 
                 onValue(this.brandsRef, (snapshot) => {
@@ -564,12 +627,12 @@
                     snapshot.forEach((child) => this.brands.push({ id: child.key, ...child.val() }));
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
+                    dataLoaded.brands = true;
+                    checkAllLoaded();
                 });
             }
 
             bindEvents() {
-                document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
-
                 document.getElementById('mobileMenuBtn').addEventListener('click', () => {
                     document.getElementById('sidebarNav').classList.toggle('hidden');
                 });
@@ -792,7 +855,7 @@
                         const qtyUI = !isTracked ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
                         tbody.innerHTML += `
-                            <tr class="hover:bg-gray-50 group border-b border-gray-50">
+                            <tr class="hover:bg-gray-50 border-b border-gray-50">
                                 <td class="px-6 py-4 font-semibold text-gray-800 align-top w-24">${p.code || ''}</td>
                                 <td class="px-6 py-4 text-sm text-gray-600 align-top w-48 whitespace-nowrap">${metaTags.join('')}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700 align-top">
@@ -804,7 +867,7 @@
                                 <td class="px-6 py-4 text-right align-top w-32">${qtyUI}</td>
                                 <td class="px-6 py-4 text-right font-medium text-blue-600 align-top w-32">${UI.formatCurrency(p.price)}</td>
                                 <td class="px-6 py-4 text-right align-top w-24">
-                                    <div class="flex justify-end gap-2">
+                                    <div class="flex justify-end gap-2 opacity-100 transition-opacity">
                                         <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
                                         <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
@@ -996,7 +1059,7 @@
             triggerQuickAdjust() {
                 const val = document.getElementById('quickAdjustInput').value.trim();
                 if (!val) {
-                    UI.showToast('Vui lòng nhập Serial hoặc Mã SP!', 'error');
+                    UI.showToast('Vui lòng nhập Serial, Mã SP hoặc SKU!', 'error');
                     return;
                 }
                 this.processQuickAdjustScan(val);
