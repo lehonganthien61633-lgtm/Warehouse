@@ -14,6 +14,8 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #app-container { display: none; }
+        #loading-screen { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
@@ -90,7 +92,7 @@
                 <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">Bảng điều khiển</h2>
                 <div class="flex items-center gap-3">
                     <button onclick="app.logout()" class="md:hidden text-red-500 mr-2"><i class="fa-solid fa-power-off text-xl"></i></button>
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold" id="headerUserIcon">
                         <i class="fa-solid fa-user-shield"></i>
                     </div>
                 </div>
@@ -153,7 +155,7 @@
                     <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <div class="relative w-full sm:w-96">
                             <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" id="searchInput" placeholder="Tìm kiếm Tên, Mã, Barcode, Serial..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow">
+                            <input type="text" id="searchInput" placeholder="Tìm kiếm Tên, Mã, SKU, Serial..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow">
                         </div>
                         <button onclick="app.openModal()" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
                             <i class="fa-solid fa-plus"></i> Thêm sản phẩm
@@ -190,9 +192,9 @@
                     </div>
                 </div>
 
-                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands, Locations) -->
+                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands) -->
                 <div id="view-categories" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         <!-- Categories Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -232,26 +234,7 @@
                                 </table>
                             </div>
                         </div>
-                        
-                        <!-- Location Table -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-location-dot text-red-500 mr-2"></i> Nơi lưu trữ</h3>
-                                <button onclick="app.openConfigModal('location')" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
-                            </div>
-                            <div class="overflow-y-auto max-h-96">
-                                <table class="w-full text-left border-collapse">
-                                    <thead class="bg-white sticky top-0 shadow-sm z-10">
-                                        <tr class="text-gray-500 text-sm border-b border-gray-100">
-                                            <th class="px-6 py-3 font-medium">Tên nơi lưu</th>
-                                            <th class="px-6 py-3 font-medium text-right w-24">Thao tác</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="locationsTableBody" class="divide-y divide-gray-100"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
+
                     </div>
                 </div>
 
@@ -274,8 +257,8 @@
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Mã Barcode</label>
-                            <input type="text" id="productBarcode" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono tracking-wide" placeholder="Nhập mã...">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mã SKU</label>
+                            <input type="text" id="productSku" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono tracking-wide" placeholder="Sinh tự động...">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (S/N)</label>
@@ -330,12 +313,6 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mua</label>
                             <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nơi lưu trữ</label>
-                            <select id="productPurchasePlace" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
-                                <option value="">Chọn nơi lưu...</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="border border-gray-200 p-4 rounded-lg bg-gray-50 mt-4">
@@ -359,7 +336,7 @@
         </div>
     </div>
 
-    <!-- Modal: Thiết lập chung (Thêm Phân loại / Hãng / Nơi lưu) -->
+    <!-- Modal: Thiết lập chung (Thêm Phân loại / Hãng) -->
     <div id="configModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="configModalContent">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -445,7 +422,6 @@
                 this.products = [];
                 this.categories = [];
                 this.brands = [];
-                this.locations = [];
                 this.searchQuery = '';
                 this.currentView = 'dashboard';
                 
@@ -454,12 +430,10 @@
                 this.productsRef = null;
                 this.categoriesRef = null;
                 this.brandsRef = null;
-                this.locationsRef = null;
                 
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
-                this.isRegisterMode = false;
-
+                
                 this.initApp();
                 this.bindEvents();
             }
@@ -479,10 +453,10 @@
             }
 
             checkLogin() {
-                const storedUser = localStorage.getItem('wms_logged_email');
+                const isLogged = sessionStorage.getItem('wms_logged_in');
+                document.getElementById('loading-screen').style.display = 'none';
                 
-                if(!storedUser) {
-                    document.getElementById('loading-screen').style.display = 'none';
+                if(!isLogged) {
                     document.getElementById('login-container').classList.remove('hidden');
                     document.getElementById('login-container').style.display = 'flex';
                     document.getElementById('app-container').style.display = 'none';
@@ -497,7 +471,6 @@
                     this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
                     this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
                     this.brandsRef = ref(this.db, 'users/' + this.userId + '/brands');
-                    this.locationsRef = ref(this.db, 'users/' + this.userId + '/locations');
                     
                     this.listenToData();
                 }
@@ -513,15 +486,10 @@
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Xử lý...';
 
                 if(u === 'admin' && p === '123') {
-                    localStorage.setItem('wms_logged_email', 'admin');
+                    sessionStorage.setItem('wms_logged_in', 'true');
                     document.getElementById('loginError').classList.add('hidden');
                     
-                    // Giữ màn hình loading sau khi login thành công để đợi dữ liệu Firebase
-                    document.getElementById('login-container').classList.add('hidden');
-                    document.getElementById('login-container').style.display = 'none';
-                    document.getElementById('loading-screen').style.display = 'flex';
-                    
-                    this.checkLogin();
+                    window.location.reload(); 
                 } else {
                     document.getElementById('loginError').innerText = 'Tài khoản hoặc mật khẩu không đúng!';
                     document.getElementById('loginError').classList.remove('hidden');
@@ -531,16 +499,15 @@
             }
 
             logout() {
-                localStorage.removeItem('wms_logged_email');
+                sessionStorage.removeItem('wms_logged_in');
                 window.location.reload();
             }
 
             listenToData() {
-                // Tracking data loaded status
-                let dataLoaded = { products: false, categories: false, brands: false, locations: false };
+                let dataLoaded = { products: false, categories: false, brands: false };
                 
                 const checkAllLoaded = () => {
-                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands && dataLoaded.locations) {
+                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands) {
                         document.getElementById('loading-screen').style.display = 'none';
                     }
                 }
@@ -571,15 +538,6 @@
                     dataLoaded.brands = true;
                     checkAllLoaded();
                 });
-                
-                onValue(this.locationsRef, (snapshot) => {
-                    this.locations = [];
-                    snapshot.forEach((child) => this.locations.push({ id: child.key, ...child.val() }));
-                    this.populateDropdowns();
-                    if(this.currentView === 'categories') this.renderCategories();
-                    dataLoaded.locations = true;
-                    checkAllLoaded();
-                });
             }
 
             bindEvents() {
@@ -593,8 +551,7 @@
                     this.searchQuery = e.target.value.toLowerCase();
                     this.renderProducts();
                 });
-
-                // Auto điền khi thay đổi danh mục (chỉ khi đang thêm mới)
+                
                 document.getElementById('productCategory').addEventListener('change', (e) => {
                     const id = document.getElementById('productId').value;
                     if (!id && e.target.value) {
@@ -617,13 +574,12 @@
                         if(oldProduct.model && !document.getElementById('productModel').value) document.getElementById('productModel').value = oldProduct.model;
                         if(oldProduct.color && !document.getElementById('productColor').value) document.getElementById('productColor').value = oldProduct.color;
                         if(oldProduct.price && !document.getElementById('productPrice').value) document.getElementById('productPrice').value = oldProduct.price;
-                        if(oldProduct.purchasePlace && !document.getElementById('productPurchasePlace').value) document.getElementById('productPurchasePlace').value = oldProduct.purchasePlace;
                         
                         UI.showToast("Đã điền thông tin từ lần nhập trước.");
                     }
                 };
 
-                document.getElementById('productBarcode').addEventListener('blur', (e) => fillOldDataIfExist(e.target.value.trim(), 'barcode'));
+                document.getElementById('productSku').addEventListener('blur', (e) => fillOldDataIfExist(e.target.value.trim(), 'sku'));
                 document.getElementById('productSerial').addEventListener('blur', (e) => fillOldDataIfExist(e.target.value.trim(), 'serial'));
 
                 document.getElementById('toggleQuantity').addEventListener('change', (e) => {
@@ -640,10 +596,15 @@
                 return `${prefix.toUpperCase()}${randomStr}`;
             }
 
+            generateNumericCode(length) {
+                let code = '';
+                for(let i = 0; i < length; i++) code += Math.floor(Math.random() * 10).toString();
+                return code;
+            }
+
             populateDropdowns() {
                 const catSelect = document.getElementById('productCategory');
                 const brandSelect = document.getElementById('productBrand');
-                const placeSelect = document.getElementById('productPurchasePlace');
 
                 const currentCat = catSelect.value;
                 catSelect.innerHTML = '<option value="" disabled selected>Chọn...</option>';
@@ -654,11 +615,6 @@
                 brandSelect.innerHTML = '<option value="">Chọn...</option>';
                 this.brands.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`);
                 brandSelect.value = currentBrand || '';
-                
-                const currentPlace = placeSelect.value;
-                placeSelect.innerHTML = '<option value="">Chọn nơi lưu...</option>';
-                this.locations.forEach(l => placeSelect.innerHTML += `<option value="${l.name}">${l.name}</option>`);
-                placeSelect.value = currentPlace || '';
             }
 
             switchView(viewName) {
@@ -695,7 +651,6 @@
             renderCategories() {
                 const catTbody = document.getElementById('categoriesTableBody');
                 const brandTbody = document.getElementById('brandsTableBody');
-                const locTbody = document.getElementById('locationsTableBody');
                 
                 catTbody.innerHTML = '';
                 this.categories.forEach(c => {
@@ -719,19 +674,6 @@
                             <td class="px-6 py-3 text-right">
                                 <div class="flex justify-end gap-2">
                                     <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
-                                </div>
-                            </td>
-                        </tr>`;
-                });
-                
-                locTbody.innerHTML = '';
-                this.locations.forEach(l => {
-                    locTbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b border-gray-100">
-                            <td class="px-6 py-3 text-gray-700">${l.name}</td>
-                            <td class="px-6 py-3 text-right">
-                                <div class="flex justify-end gap-2">
-                                    <button onclick="app.requestDelete('${l.id}', 'location')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                                 </div>
                             </td>
                         </tr>`;
@@ -784,7 +726,7 @@
                 const emptyState = document.getElementById('tableEmpty');
                 tbody.innerHTML = '';
 
-                const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery) || (p.barcode || '').includes(this.searchQuery));
+                const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery) || (p.sku || '').includes(this.searchQuery));
 
                 if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
                     emptyState.classList.remove('hidden');
@@ -808,11 +750,10 @@
                         let metaInfo = [];
                         if(p.model) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`);
                         if(p.color) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-palette"></i> ${p.color}</span>`);
-                        if(p.purchasePlace) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-100"><i class="fa-solid fa-location-dot"></i> ${p.purchasePlace}</span>`);
                         
                         const metaUI = metaInfo.length > 0 ? `<div class="text-[11px] mt-2 flex flex-wrap gap-2">${metaInfo.join('')}</div>` : '';
-                        const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1"><i class="fa-solid fa-qrcode"></i> S/N: ${p.serial}</div>` : '';
-                        const barcodeUI = p.barcode ? `<div class="text-[11px] text-gray-500 mt-1 font-mono flex items-center gap-1"><i class="fa-solid fa-barcode"></i> Barcode: ${p.barcode}</div>` : '';
+                        const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1">S/N: ${p.serial}</div>` : '';
+                        const skuUI = p.sku ? `<div class="text-[11px] text-gray-500 mt-1 font-mono flex items-center gap-1">SKU: ${p.sku}</div>` : '';
                         
                         const isTracked = p.trackQuantity !== false;
                         const qtyUI = !isTracked ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
@@ -823,7 +764,7 @@
                                 <td class="px-6 py-4 text-sm text-gray-600 align-top w-48 whitespace-nowrap">${metaTags.join('')}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700 align-top">
                                     <div class="text-base font-bold text-gray-800">${p.name}</div>
-                                    ${barcodeUI}
+                                    ${skuUI}
                                     ${serialUI}
                                     ${metaUI}
                                 </td>
@@ -844,6 +785,7 @@
                 document.getElementById('productForm').reset();
                 document.getElementById('productId').value = '';
                 document.getElementById('productCode').value = '';
+                document.getElementById('productSku').value = '';
                 
                 const tQCheckbox = document.getElementById('toggleQuantity');
                 const qInput = document.getElementById('productQuantity');
@@ -859,14 +801,13 @@
                         document.getElementById('productCategory').value = p.category || '';
                         document.getElementById('productBrand').value = p.brand || '';
                         document.getElementById('productCode').value = p.code || '';
-                        document.getElementById('productBarcode').value = p.barcode || '';
+                        document.getElementById('productSku').value = p.sku || '';
                         document.getElementById('productName').value = p.name || '';
                         document.getElementById('productModel').value = p.model || '';
                         document.getElementById('productSerial').value = p.serial || '';
                         document.getElementById('productColor').value = p.color || '';
                         document.getElementById('productPrice').value = p.price || 0;
                         document.getElementById('productPurchaseDate').value = p.purchaseDate || '';
-                        document.getElementById('productPurchasePlace').value = p.purchasePlace || '';
                         
                         const isTracked = p.trackQuantity !== false;
                         tQCheckbox.checked = isTracked;
@@ -897,9 +838,15 @@
                 const category = document.getElementById('productCategory').value;
                 
                 let code = document.getElementById('productCode').value.toUpperCase().trim();
+                let sku = document.getElementById('productSku').value.trim();
+                
                 if (!id && !code) {
                     const catObj = this.categories.find(c => c.id === category);
                     code = this.generateProductCode(catObj ? catObj.prefix : 'KH');
+                }
+                
+                if (!sku) {
+                    sku = this.generateNumericCode(8);
                 }
 
                 const trackQuantity = document.getElementById('toggleQuantity').checked;
@@ -913,14 +860,13 @@
                     category,
                     brand: document.getElementById('productBrand').value,
                     code,
-                    barcode: document.getElementById('productBarcode').value.trim(),
+                    sku: sku,
                     name: document.getElementById('productName').value.trim(),
                     model: document.getElementById('productModel').value.trim(),
                     serial: document.getElementById('productSerial').value.trim(),
                     color: document.getElementById('productColor').value.trim(),
                     price: parseFloat(document.getElementById('productPrice').value),
                     purchaseDate: document.getElementById('productPurchaseDate').value,
-                    purchasePlace: document.getElementById('productPurchasePlace').value.trim(),
                     trackQuantity,
                     quantity: finalQty,
                     updatedAt: new Date().toISOString()
@@ -928,7 +874,9 @@
 
                 try {
                     if (this.products.some(p => p.code === code && p.id !== id)) {
-                        UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); return;
+                        UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); 
+                        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
+                        return;
                     }
                     if (id) await update(ref(this.db, 'users/' + this.userId + '/products/' + id), productData);
                     else await set(push(this.productsRef), { ...productData, createdAt: new Date().toISOString() });
@@ -950,10 +898,6 @@
                     document.getElementById('configPrefix').setAttribute('required', 'true');
                 } else if(type === 'brand') {
                     document.getElementById('configModalTitle').innerText = 'Thêm Hãng Sản Xuất';
-                    document.getElementById('configPrefixContainer').classList.add('hidden');
-                    document.getElementById('configPrefix').removeAttribute('required');
-                } else {
-                    document.getElementById('configModalTitle').innerText = 'Thêm Nơi Lưu Trữ';
                     document.getElementById('configPrefixContainer').classList.add('hidden');
                     document.getElementById('configPrefix').removeAttribute('required');
                 }
@@ -982,8 +926,6 @@
                         await set(push(this.categoriesRef), { name, prefix });
                     } else if (type === 'brand') {
                         await set(push(this.brandsRef), { name });
-                    } else {
-                        await set(push(this.locationsRef), { name });
                     }
                     UI.showToast("Thêm mới thành công!");
                     this.closeConfigModal();
@@ -1011,7 +953,6 @@
                     let path = 'products';
                     if(this.deleteCandidateType === 'category') path = 'categories';
                     if(this.deleteCandidateType === 'brand') path = 'brands';
-                    if(this.deleteCandidateType === 'location') path = 'locations';
                     await remove(ref(this.db, 'users/' + this.userId + '/' + path + '/' + this.deleteCandidateId));
                     UI.showToast("Đã xóa thành công");
                     this.closeConfirmModal();
