@@ -40,6 +40,10 @@
                 <i class="fa-solid fa-box w-5 text-center"></i>
                 <span class="font-medium">Quản lý sản phẩm</span>
             </button>
+            <button onclick="app.switchView('categories')" id="nav-categories" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+                <i class="fa-solid fa-tags w-5 text-center"></i>
+                <span class="font-medium">Phân loại & Hãng</span>
+            </button>
         </nav>
         <div class="p-4 text-xs text-slate-500 text-center border-t border-slate-700 hidden md:block">
             &copy; 2026 WMS System<br>Đã kết nối Cloud
@@ -133,7 +137,48 @@
                         <i class="fa-solid fa-plus"></i> Thêm sản phẩm
                     </button>
                 </div>
+                <div id="view-categories" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Categories Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800"><i class="fa-solid fa-layer-group text-blue-500 mr-2"></i> Phân loại sản phẩm</h3>
+                            <button onclick="app.openCatBrandModal('category')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors shadow-sm"><i class="fa-solid fa-plus"></i> Thêm mới</button>
+                        </div>
+                        <div class="overflow-y-auto max-h-96">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-white sticky top-0 shadow-sm">
+                                    <tr class="text-gray-500 text-sm border-b border-gray-100">
+                                        <th class="px-6 py-3 font-medium">Mã (2 ký tự)</th>
+                                        <th class="px-6 py-3 font-medium">Tên phân loại</th>
+                                        <th class="px-6 py-3 font-medium text-center">Xóa</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoriesTableBody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
 
+                    <!-- Brands Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800"><i class="fa-solid fa-industry text-purple-500 mr-2"></i> Hãng sản xuất</h3>
+                            <button onclick="app.openCatBrandModal('brand')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-medium transition-colors shadow-sm"><i class="fa-solid fa-plus"></i> Thêm mới</button>
+                        </div>
+                        <div class="overflow-y-auto max-h-96">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-white sticky top-0 shadow-sm">
+                                    <tr class="text-gray-500 text-sm border-b border-gray-100">
+                                        <th class="px-6 py-3 font-medium">Tên hãng</th>
+                                        <th class="px-6 py-3 font-medium text-center">Xóa</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="brandsTableBody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
                 <!-- Products Table -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="overflow-x-auto">
@@ -188,36 +233,65 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Phân Loại *</label>
                         <select id="productCategory" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                             <option value="" disabled selected>Chọn phân loại...</option>
-                            <option value="DT">Điện tử (DT)</option>
-                            <option value="TT">Thời trang (TT)</option>
-                            <option value="GD">Gia dụng (GD)</option>
-                            <option value="TP">Thực phẩm (TP)</option>
-                            <option value="KH">Khác (KH)</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hãng Sản Xuất</label>
+                        <select id="productBrand" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="">Chọn hãng...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Mã Sản Phẩm</label>
                         <input type="text" id="productCode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono font-bold" placeholder="Tự động sinh">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã Barcode</label>
+                        <input type="text" id="productBarcode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono tracking-widest" placeholder="Tự động sinh">
+                    </div>
                 </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tên Sản Phẩm *</label>
                     <input type="text" id="productName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên sản phẩm...">
                 </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Số Lượng *</label>
-                        <input type="number" id="productQuantity" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                        <input type="text" id="productModel" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="VD: XYZ-2026">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Đơn Giá (VNĐ) *</label>
                         <input type="number" id="productPrice" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã Barcode</label>
-                    <input type="text" id="productBarcode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono tracking-widest" placeholder="Tự động sinh">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mua</label>
+                        <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nơi mua</label>
+                        <input type="text" id="productPurchasePlace" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Cửa hàng/Website...">
+                    </div>
                 </div>
+
+                <div class="border border-gray-200 p-4 rounded-lg bg-gray-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-medium text-gray-700">Quản lý tồn kho chi tiết (Số lượng)</label>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggleQuantity" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                    <input type="number" id="productQuantity" min="0" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400" placeholder="0">
+                </div>
+
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
                     <button type="button" onclick="app.closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
                     <button type="submit" id="saveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
@@ -225,9 +299,36 @@
                     </button>
                 </div>
             </form>
+<div id="catBrandModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="catBrandModalContent">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-gray-800" id="catBrandModalTitle">Thêm mới</h3>
+                <button onclick="app.closeCatBrandModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="catBrandForm" class="p-6 space-y-4">
+                <input type="hidden" id="catBrandType">
+                
+                <div id="catPrefixContainer" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã viết tắt (2 Ký tự) *</label>
+                    <input type="text" id="catPrefix" maxlength="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="VD: DT">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên hiển thị *</label>
+                    <input type="text" id="catBrandName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên...">
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
+                    <button type="button" onclick="app.closeCatBrandModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
+                    <button type="submit" id="catBrandSaveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                        Lưu
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-
     <!-- Confirm Delete Modal -->
     <div id="confirmModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6" id="confirmModalContent">
@@ -284,409 +385,428 @@
         // Application Logic
         class WMSApp {
             constructor() {
-                this.products = [];
-                this.searchQuery = '';
-                this.currentView = 'dashboard';
-                this.db = null;
-                this.userId = null;
-                this.productsRef = null;
-                this.deleteCandidateId = null;
+            this.products = [];
+            this.categories = [];
+            this.brands = [];
+            this.searchQuery = '';
+            this.currentView = 'dashboard';
+            this.db = null;
+            this.userId = null;
+            this.productsRef = null;
+            this.categoriesRef = null;
+            this.brandsRef = null;
+            this.deleteCandidateId = null;
+            this.deleteCandidateType = null;
 
-                this.initFirebase();
-                this.bindEvents();
-            }
+            this.initFirebase();
+            this.bindEvents();
+        }
 
-            async initFirebase() {
-                try {
-                    const firebaseConfig = {
-                        databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/"
-                    };
-
-                    const app = initializeApp(firebaseConfig);
-                    this.db = getDatabase(app);
-
-                    // Sử dụng ID thiết bị cục bộ thay vì Firebase Auth (do thiếu apiKey)
-                    this.userId = localStorage.getItem('wms_user_id');
-                    if (!this.userId) {
-                        this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
-                        localStorage.setItem('wms_user_id', this.userId);
-                    }
-                    
-                    // Khởi tạo Reference tới Realtime Database
-                    this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
-                    
-                    this.listenToData();
-                } catch (error) {
-                    console.error("Firebase init error:", error);
-                    UI.showToast("Không thể kết nối đến máy chủ", "error");
-                    document.getElementById('tableLoading').innerHTML = '<p class="text-red-500"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><br>Lỗi kết nối cơ sở dữ liệu.</p>';
-                }
-            }
-
-            listenToData() {
-                onValue(this.productsRef, (snapshot) => {
-                    this.products = [];
-                    snapshot.forEach((childSnapshot) => {
-                        this.products.push({ id: childSnapshot.key, ...childSnapshot.val() });
-                    });
-                    
-                    // Hide loading
-                    document.getElementById('tableLoading').classList.add('hidden');
-                    
-                    this.render();
-                }, (error) => {
-                    console.error("Error fetching data:", error);
-                    UI.showToast("Lỗi đồng bộ dữ liệu", "error");
-                });
-            }
-
-            bindEvents() {
-                document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-                    const nav = document.getElementById('sidebarNav');
-                    nav.classList.toggle('hidden');
-                });
-
-                document.getElementById('searchInput').addEventListener('input', (e) => {
-                    this.searchQuery = e.target.value.toLowerCase();
-                    this.renderProducts();
-                });
-
-                document.getElementById('productForm').addEventListener('submit', (e) => this.handleSaveProduct(e));
-
-                document.getElementById('productModal').addEventListener('click', (e) => {
-                    if(e.target === e.currentTarget) this.closeModal();
-                });
-                document.getElementById('confirmModal').addEventListener('click', (e) => {
-                    if(e.target === e.currentTarget) this.closeConfirmModal();
-                });
-                
-                document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-                    this.executeDelete();
-                });
-
-                // Tự động sinh mã SP và Barcode khi chọn phân loại (Chỉ áp dụng khi thêm mới)
-                document.getElementById('productCategory').addEventListener('change', (e) => {
-                    const id = document.getElementById('productId').value;
-                    if (!id && e.target.value) {
-                        const prefix = e.target.value;
-                        document.getElementById('productCode').value = this.generateProductCode(prefix);
-                        document.getElementById('productBarcode').value = this.generateBarcode();
-                    }
-                });
-            }
-
-            // Thuật toán 1: Mã sản phẩm = 2 ký tự prefix + 4 ký tự Alphanumeric ngẫu nhiên
-            generateProductCode(prefix) {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let randomStr = '';
-                for (let i = 0; i < 4; i++) {
-                    randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                return `${prefix}${randomStr}`;
-            }
-
-            // Thuật toán 2: Mã Barcode = Chuỗi 12 số ngẫu nhiên
-            generateBarcode() {
-                let barcode = '';
-                for(let i = 0; i < 12; i++) {
-                    barcode += Math.floor(Math.random() * 10).toString();
-                }
-                return barcode;
-            }
-
-            switchView(viewName) {
-                this.currentView = viewName;
-                
-                // Update Nav UI
-                document.querySelectorAll('.nav-btn').forEach(btn => {
-                    btn.classList.remove('bg-blue-600', 'text-white');
-                    btn.classList.add('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
-                });
-                
-                const activeBtn = document.getElementById(`nav-${viewName}`);
-                if(activeBtn) {
-                    activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
-                    activeBtn.classList.add('bg-blue-600', 'text-white');
-                }
-
-                // Update View Visibility
-                document.getElementById('view-dashboard').classList.add('hidden');
-                document.getElementById('view-products').classList.add('hidden');
-                document.getElementById(`view-${viewName}`).classList.remove('hidden');
-
-                // Update Title
-                document.getElementById('pageTitle').innerText = viewName === 'dashboard' ? 'Bảng điều khiển' : 'Quản lý sản phẩm';
-
-                // Re-render
-                this.render();
-                
-                // Close mobile menu if open
-                if(window.innerWidth < 768) {
-                    document.getElementById('sidebarNav').classList.add('hidden');
-                }
-            }
-
-            render() {
-                if (this.currentView === 'dashboard') {
-                    this.renderDashboard();
-                } else {
-                    this.renderProducts();
-                }
-            }
-
-            renderDashboard() {
-                let totalItems = 0;
-                let totalValue = 0;
-                let lowStockItems = [];
-
-                this.products.forEach(p => {
-                    const qty = parseInt(p.quantity) || 0;
-                    const price = parseFloat(p.price) || 0;
-                    
-                    totalItems += qty;
-                    totalValue += (qty * price);
-                    
-                    if (qty < 10) {
-                        lowStockItems.push(p);
-                    }
-                });
-
-                document.getElementById('stat-total-items').innerText = totalItems.toLocaleString('vi-VN');
-                document.getElementById('stat-total-value').innerText = UI.formatCurrency(totalValue);
-                document.getElementById('stat-low-stock').innerText = lowStockItems.length;
-
-                // Render Low Stock Table
-                const tbody = document.getElementById('lowStockTableBody');
-                const emptyState = document.getElementById('lowStockEmpty');
-                
-                tbody.innerHTML = '';
-                
-                if (lowStockItems.length === 0) {
-                    tbody.parentElement.classList.add('hidden');
-                    emptyState.classList.remove('hidden');
-                } else {
-                    tbody.parentElement.classList.remove('hidden');
-                    emptyState.classList.add('hidden');
-                    
-                    lowStockItems.forEach(p => {
-                        const tr = document.createElement('tr');
-                        tr.className = "hover:bg-red-50/50 transition-colors";
-                        tr.innerHTML = `
-                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-semibold">${p.code}</td>
-                            <td class="px-6 py-3 border-t border-gray-100 text-sm">${p.name}</td>
-                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-bold text-red-600 text-right">${p.quantity}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-            }
-
-            renderProducts() {
-                const tbody = document.getElementById('productsTableBody');
-                const emptyState = document.getElementById('tableEmpty');
-                tbody.innerHTML = '';
-
-                const filtered = this.products.filter(p => {
-                    return p.name.toLowerCase().includes(this.searchQuery) || 
-                           p.code.toLowerCase().includes(this.searchQuery) ||
-                           (p.barcode && p.barcode.includes(this.searchQuery));
-                });
-
-                if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
-                    emptyState.classList.remove('hidden');
-                    tbody.parentElement.classList.add('hidden');
-                } else {
-                    emptyState.classList.add('hidden');
-                    tbody.parentElement.classList.remove('hidden');
-                    
-                    const categoryMap = { 'DT': 'Điện tử', 'TT': 'Thời trang', 'GD': 'Gia dụng', 'TP': 'Thực phẩm', 'KH': 'Khác' };
-
-                    filtered.forEach(p => {
-                        const isLowStock = p.quantity < 10;
-                        const qtyBadgeClass = isLowStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
-                        const catName = categoryMap[p.category] || p.category || 'Khác';
-                        const barcodeUI = p.barcode ? `<div class="text-xs text-gray-400 mt-1 font-mono"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : '';
-                        
-                        const tr = document.createElement('tr');
-                        tr.className = "hover:bg-gray-50 transition-colors group";
-                        tr.innerHTML = `
-                            <td class="px-6 py-4 font-semibold text-gray-800">${p.code}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
-                                <span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200">${catName}</span>
-                            </td>
-                            <td class="px-6 py-4 font-medium text-gray-700">
-                                ${p.name}
-                                ${barcodeUI}
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="px-3 py-1 rounded-full text-xs font-bold ${qtyBadgeClass}">
-                                    ${p.quantity}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right font-medium text-blue-600">${UI.formatCurrency(p.price)}</td>
-                            <td class="px-6 py-4 text-center">
-                                <div class="flex justify-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa">
-                                        <i class="fa-solid fa-pen-to-square text-sm"></i>
-                                    </button>
-                                    <button onclick="app.requestDelete('${p.id}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa">
-                                        <i class="fa-solid fa-trash text-sm"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-            }
-
-            openModal(id = null) {
-                const modal = document.getElementById('productModal');
-                const content = document.getElementById('productModalContent');
-                const title = document.getElementById('modalTitle');
-                const form = document.getElementById('productForm');
-                
-                form.reset();
-                document.getElementById('productId').value = '';
-                
-                // Reset các input tự động sinh
-                document.getElementById('productCode').value = '';
-                document.getElementById('productBarcode').value = '';
-
-                if (id) {
-                    title.innerText = 'Sửa Sản Phẩm';
-                    const product = this.products.find(p => p.id === id);
-                    if(product) {
-                        document.getElementById('productId').value = product.id;
-                        document.getElementById('productCategory').value = product.category || 'KH';
-                        document.getElementById('productCode').value = product.code;
-                        document.getElementById('productName').value = product.name;
-                        document.getElementById('productQuantity').value = product.quantity;
-                        document.getElementById('productPrice').value = product.price;
-                        document.getElementById('productBarcode').value = product.barcode || '';
-                    }
-                } else {
-                    title.innerText = 'Thêm Sản Phẩm Mới';
-                }
-
-                modal.classList.remove('hidden');
-                void modal.offsetWidth;
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-            }
-
-            closeModal() {
-                const modal = document.getElementById('productModal');
-                const content = document.getElementById('productModalContent');
-                
-                modal.classList.add('opacity-0');
-                content.classList.remove('scale-100');
-                content.classList.add('scale-95');
-                
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 300);
-            }
-
-            async handleSaveProduct(e) {
-                e.preventDefault();
-                
-                const btn = document.getElementById('saveBtn');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-
-                const id = document.getElementById('productId').value;
-                const category = document.getElementById('productCategory').value;
-                
-                // Trường hợp hiếm khi form bị submit trước khi kịp sinh mã
-                let code = document.getElementById('productCode').value.toUpperCase().trim();
-                let barcode = document.getElementById('productBarcode').value.trim();
-                if (!id && !code) {
-                    code = this.generateProductCode(category);
-                    barcode = this.generateBarcode();
-                }
-
-                const name = document.getElementById('productName').value.trim();
-                const quantity = parseInt(document.getElementById('productQuantity').value, 10);
-                const price = parseFloat(document.getElementById('productPrice').value);
-
-                const productData = {
-                    category, code, name, quantity, price, barcode, updatedAt: new Date().toISOString()
+        async initFirebase() {
+            try {
+                const firebaseConfig = {
+                    databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/"
                 };
+                const app = initializeApp(firebaseConfig);
+                this.db = getDatabase(app);
 
-                try {
-                    if (id) {
-                        const docRef = ref(this.db, 'users/' + this.userId + '/products/' + id);
-                        await update(docRef, productData);
-                        UI.showToast("Cập nhật thành công!");
-                    } else {
-                        const newDocRef = push(this.productsRef);
-                        await set(newDocRef, { ...productData, createdAt: new Date().toISOString() });
-                        UI.showToast("Thêm mới thành công!");
-                    }
-                    this.closeModal();
-                } catch (error) {
-                    console.error("Save error:", error);
-                    UI.showToast("Có lỗi xảy ra khi lưu!", "error");
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
+                this.userId = localStorage.getItem('wms_user_id');
+                if (!this.userId) {
+                    this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('wms_user_id', this.userId);
                 }
-            }
-
-            requestDelete(id) {
-                this.deleteCandidateId = id;
-                const modal = document.getElementById('confirmModal');
-                const content = document.getElementById('confirmModalContent');
                 
-                modal.classList.remove('hidden');
-                void modal.offsetWidth;
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-            }
-
-            closeConfirmModal() {
-                this.deleteCandidateId = null;
-                const modal = document.getElementById('confirmModal');
-                const content = document.getElementById('confirmModalContent');
+                this.productsRef = ref(this.db, 'users/' + this.userId + '/products');
+                this.categoriesRef = ref(this.db, 'users/' + this.userId + '/categories');
+                this.brandsRef = ref(this.db, 'users/' + this.userId + '/brands');
                 
-                modal.classList.add('opacity-0');
-                content.classList.remove('scale-100');
-                content.classList.add('scale-95');
-                
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 300);
-            }
-
-            async executeDelete() {
-                if(!this.deleteCandidateId) return;
-                
-                const btn = document.getElementById('confirmDeleteBtn');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-                try {
-                    const docRef = ref(this.db, 'users/' + this.userId + '/products/' + this.deleteCandidateId);
-                    await remove(docRef);
-                    UI.showToast("Đã xóa sản phẩm thành công");
-                    this.closeConfirmModal();
-                } catch (error) {
-                    console.error("Delete error:", error);
-                    UI.showToast("Lỗi khi xóa sản phẩm", "error");
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Xóa';
-                }
+                this.listenToData();
+            } catch (error) {
+                console.error("Init Error:", error);
             }
         }
 
-        // Initialize application when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            window.app = new WMSApp();
-        });
+        listenToData() {
+            onValue(this.productsRef, (snapshot) => {
+                this.products = [];
+                snapshot.forEach((child) => this.products.push({ id: child.key, ...child.val() }));
+                if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
+                if(this.currentView !== 'categories') this.render();
+            });
+
+            onValue(this.categoriesRef, (snapshot) => {
+                this.categories = [];
+                snapshot.forEach((child) => this.categories.push({ id: child.key, ...child.val() }));
+                this.populateDropdowns();
+                if(this.currentView === 'categories') this.renderCategories();
+            });
+
+            onValue(this.brandsRef, (snapshot) => {
+                this.brands = [];
+                snapshot.forEach((child) => this.brands.push({ id: child.key, ...child.val() }));
+                this.populateDropdowns();
+                if(this.currentView === 'categories') this.renderCategories();
+            });
+        }
+
+        bindEvents() {
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                document.getElementById('sidebarNav').classList.toggle('hidden');
+            });
+
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                this.searchQuery = e.target.value.toLowerCase();
+                this.renderProducts();
+            });
+
+            document.getElementById('productForm').addEventListener('submit', (e) => this.handleSaveProduct(e));
+            document.getElementById('catBrandForm').addEventListener('submit', (e) => this.handleSaveCatBrand(e));
+
+            // Modals Outside Click
+            document.getElementById('productModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeModal(); });
+            document.getElementById('confirmModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeConfirmModal(); });
+            document.getElementById('catBrandModal').addEventListener('click', (e) => { if(e.target === e.currentTarget) this.closeCatBrandModal(); });
+            
+            document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.executeDelete());
+
+            // Auto-generate code when picking a category (for NEW products)
+            document.getElementById('productCategory').addEventListener('change', (e) => {
+                const id = document.getElementById('productId').value;
+                if (!id && e.target.value) {
+                    const catObj = this.categories.find(c => c.id === e.target.value);
+                    if(catObj) {
+                        document.getElementById('productCode').value = this.generateProductCode(catObj.prefix);
+                        document.getElementById('productBarcode').value = this.generateBarcode();
+                    }
+                }
+            });
+
+            // Toggle quantity track
+            document.getElementById('toggleQuantity').addEventListener('change', (e) => {
+                const qtyInput = document.getElementById('productQuantity');
+                qtyInput.disabled = !e.target.checked;
+                if(!e.target.checked) qtyInput.value = 1;
+            });
+        }
+
+            // Thuật toán 1: Mã sản phẩm = 2 ký tự prefix + 4 ký tự Alphanumeric ngẫu nhiên
+            generateProductCode(prefix) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let randomStr = '';
+            for (let i = 0; i < 4; i++) randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+            return `${prefix.toUpperCase()}${randomStr}`;
+        }
+
+        generateBarcode() {
+            let barcode = '';
+            for(let i = 0; i < 12; i++) barcode += Math.floor(Math.random() * 10).toString();
+            return barcode;
+        }
+
+        populateDropdowns() {
+            const catSelect = document.getElementById('productCategory');
+            const brandSelect = document.getElementById('productBrand');
+            catSelect.innerHTML = '<option value="" disabled selected>Chọn phân loại...</option>';
+            this.categories.forEach(c => catSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.prefix})</option>`);
+            brandSelect.innerHTML = '<option value="">Chọn hãng...</option>';
+            this.brands.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`);
+        }
+
+        switchView(viewName) {
+            this.currentView = viewName;
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
+            });
+            const activeBtn = document.getElementById(`nav-${viewName}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
+                activeBtn.classList.add('bg-blue-600', 'text-white');
+            }
+
+            ['dashboard', 'products', 'categories'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if(el) el.classList.add('hidden');
+            });
+            const showEl = document.getElementById(`view-${viewName}`);
+            if(showEl) showEl.classList.remove('hidden');
+
+            const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Phân loại & Hãng' };
+            document.getElementById('pageTitle').innerText = titles[viewName] || 'WMS';
+
+            this.render();
+            if(window.innerWidth < 768) document.getElementById('sidebarNav').classList.add('hidden');
+        }
+
+        render() {
+            if (this.currentView === 'dashboard') this.renderDashboard();
+            else if (this.currentView === 'products') this.renderProducts();
+            else if (this.currentView === 'categories') this.renderCategories();
+        }
+
+        renderCategories() {
+            const catTbody = document.getElementById('categoriesTableBody');
+            const brandTbody = document.getElementById('brandsTableBody');
+            
+            catTbody.innerHTML = '';
+            this.categories.forEach(c => {
+                catTbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 border-b border-gray-100">
+                        <td class="px-6 py-3 font-semibold text-gray-800">${c.prefix}</td>
+                        <td class="px-6 py-3 text-gray-700">${c.name}</td>
+                        <td class="px-6 py-3 text-center">
+                            <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                        </td>
+                    </tr>`;
+            });
+
+            brandTbody.innerHTML = '';
+            this.brands.forEach(b => {
+                brandTbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 border-b border-gray-100">
+                        <td class="px-6 py-3 text-gray-700">${b.name}</td>
+                        <td class="px-6 py-3 text-center">
+                            <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        renderDashboard() {
+            let totalItems = 0; let totalValue = 0; let lowStockItems = [];
+            this.products.forEach(p => {
+                const qty = parseInt(p.quantity) || 0;
+                const trackQty = p.trackQuantity !== false;
+                
+                if(trackQty) totalItems += qty;
+                totalValue += (trackQty ? qty : 1) * (parseFloat(p.price) || 0);
+                
+                if (trackQty && qty < 10) lowStockItems.push(p);
+            });
+
+            document.getElementById('stat-total-items').innerText = totalItems.toLocaleString('vi-VN');
+            document.getElementById('stat-total-value').innerText = UI.formatCurrency(totalValue);
+            document.getElementById('stat-low-stock').innerText = lowStockItems.length;
+
+            const tbody = document.getElementById('lowStockTableBody');
+            const emptyState = document.getElementById('lowStockEmpty');
+            tbody.innerHTML = '';
+            
+            if (lowStockItems.length === 0) {
+                tbody.parentElement.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                tbody.parentElement.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                lowStockItems.forEach(p => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-red-50/50">
+                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-semibold">${p.code || ''}</td>
+                            <td class="px-6 py-3 border-t border-gray-100 text-sm">${p.name}</td>
+                            <td class="px-6 py-3 border-t border-gray-100 text-sm font-bold text-red-600 text-right">${p.quantity}</td>
+                        </tr>`;
+                });
+            }
+        }
+
+        renderProducts() {
+            const tbody = document.getElementById('productsTableBody');
+            const emptyState = document.getElementById('tableEmpty');
+            tbody.innerHTML = '';
+
+            const filtered = this.products.filter(p => p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.barcode || '').includes(this.searchQuery));
+
+            if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
+                emptyState.classList.remove('hidden');
+                tbody.parentElement.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                tbody.parentElement.classList.remove('hidden');
+                
+                filtered.forEach(p => {
+                    const qty = parseInt(p.quantity) || 0;
+                    const catObj = this.categories.find(c => c.id === p.category);
+                    const brandObj = this.brands.find(b => b.id === p.brand);
+                    
+                    const catName = catObj ? catObj.name : 'Khác';
+                    const brandUI = brandObj ? `<br><span class="text-xs text-purple-600 font-semibold"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
+                    const barcodeUI = p.barcode ? `<div class="text-xs text-gray-400 mt-1 font-mono"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : '';
+                    const modelUI = p.model ? `<div class="text-xs text-blue-500 mt-1">Model: ${p.model}</div>` : '';
+                    const qtyUI = p.trackQuantity === false ? `<span class="text-gray-400 text-sm">Không quản lý</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 group">
+                            <td class="px-6 py-4 font-semibold text-gray-800">${p.code || ''}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600"><span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 whitespace-nowrap">${catName}</span>${brandUI}</td>
+                            <td class="px-6 py-4 font-medium text-gray-700">${p.name}${modelUI}${barcodeUI}</td>
+                            <td class="px-6 py-4 text-right">${qtyUI}</td>
+                            <td class="px-6 py-4 text-right font-medium text-blue-600">${UI.formatCurrency(p.price)}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex justify-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                                    <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
+            }
+        }
+
+        // Manage Modals
+        openModal(id = null) {
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            document.getElementById('productCode').value = '';
+            document.getElementById('productBarcode').value = '';
+            document.getElementById('toggleQuantity').checked = true;
+            document.getElementById('productQuantity').disabled = false;
+
+            if (id) {
+                document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
+                const p = this.products.find(x => x.id === id);
+                if(p) {
+                    document.getElementById('productId').value = p.id;
+                    document.getElementById('productCategory').value = p.category || '';
+                    document.getElementById('productBrand').value = p.brand || '';
+                    document.getElementById('productCode').value = p.code || '';
+                    document.getElementById('productBarcode').value = p.barcode || '';
+                    document.getElementById('productName').value = p.name || '';
+                    document.getElementById('productModel').value = p.model || '';
+                    document.getElementById('productPrice').value = p.price || 0;
+                    document.getElementById('productPurchaseDate').value = p.purchaseDate || '';
+                    document.getElementById('productPurchasePlace').value = p.purchasePlace || '';
+                    
+                    const tQ = p.trackQuantity !== false;
+                    document.getElementById('toggleQuantity').checked = tQ;
+                    document.getElementById('productQuantity').disabled = !tQ;
+                    document.getElementById('productQuantity').value = tQ ? (p.quantity || 0) : 1;
+                }
+            } else {
+                document.getElementById('modalTitle').innerText = 'Thêm Sản Phẩm Mới';
+            }
+
+            const m = document.getElementById('productModal'); const c = document.getElementById('productModalContent');
+            m.classList.remove('hidden'); void m.offsetWidth;
+            m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+        }
+
+        closeModal() {
+            const m = document.getElementById('productModal'); const c = document.getElementById('productModalContent');
+            m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        }
+
+        async handleSaveProduct(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+            const id = document.getElementById('productId').value;
+            const category = document.getElementById('productCategory').value;
+            
+            let code = document.getElementById('productCode').value.toUpperCase().trim();
+            let barcode = document.getElementById('productBarcode').value.trim();
+            if (!id && !code) {
+                const catObj = this.categories.find(c => c.id === category);
+                code = this.generateProductCode(catObj ? catObj.prefix : 'KH');
+                barcode = this.generateBarcode();
+            }
+
+            const trackQuantity = document.getElementById('toggleQuantity').checked;
+            const productData = {
+                category,
+                brand: document.getElementById('productBrand').value,
+                code, barcode,
+                name: document.getElementById('productName').value.trim(),
+                model: document.getElementById('productModel').value.trim(),
+                price: parseFloat(document.getElementById('productPrice').value),
+                purchaseDate: document.getElementById('productPurchaseDate').value,
+                purchasePlace: document.getElementById('productPurchasePlace').value.trim(),
+                trackQuantity,
+                quantity: trackQuantity ? parseInt(document.getElementById('productQuantity').value, 10) : 0,
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                if (this.products.some(p => p.code === code && p.id !== id)) {
+                    UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); return;
+                }
+                if (id) await update(ref(this.db, 'users/' + this.userId + '/products/' + id), productData);
+                else await set(push(this.productsRef), { ...productData, createdAt: new Date().toISOString() });
+                UI.showToast(id ? "Cập nhật thành công!" : "Thêm mới thành công!");
+                this.closeModal();
+            } catch (error) {
+                UI.showToast("Có lỗi xảy ra khi lưu!", "error");
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
+            }
+        }
+
+        openCatBrandModal(type) {
+            document.getElementById('catBrandForm').reset();
+            document.getElementById('catBrandType').value = type;
+            if(type === 'category') {
+                document.getElementById('catBrandModalTitle').innerText = 'Thêm Phân Loại';
+                document.getElementById('catPrefixContainer').classList.remove('hidden');
+                document.getElementById('catPrefix').setAttribute('required', 'true');
+            } else {
+                document.getElementById('catBrandModalTitle').innerText = 'Thêm Hãng Sản Xuất';
+                document.getElementById('catPrefixContainer').classList.add('hidden');
+                document.getElementById('catPrefix').removeAttribute('required');
+            }
+            const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
+            m.classList.remove('hidden'); void m.offsetWidth;
+            m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+        }
+
+        closeCatBrandModal() {
+            const m = document.getElementById('catBrandModal'); const c = document.getElementById('catBrandModalContent');
+            m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        }
+
+        async handleSaveCatBrand(e) {
+            e.preventDefault();
+            const type = document.getElementById('catBrandType').value;
+            const name = document.getElementById('catBrandName').value.trim();
+            const prefix = document.getElementById('catPrefix').value.trim().toUpperCase();
+            try {
+                if(type === 'category') {
+                    if(this.categories.some(c => c.prefix === prefix)) { UI.showToast("Mã viết tắt đã tồn tại!", "error"); return; }
+                    await set(push(this.categoriesRef), { name, prefix });
+                } else {
+                    await set(push(this.brandsRef), { name });
+                }
+                UI.showToast("Thêm mới thành công!");
+                this.closeCatBrandModal();
+            } catch (error) { UI.showToast("Lỗi khi lưu!", "error"); }
+        }
+
+        requestDelete(id, type = 'product') {
+            this.deleteCandidateId = id; this.deleteCandidateType = type;
+            const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent');
+            m.classList.remove('hidden'); void m.offsetWidth;
+            m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+        }
+
+        closeConfirmModal() {
+            this.deleteCandidateId = null; this.deleteCandidateType = null;
+            const m = document.getElementById('confirmModal'); const c = document.getElementById('confirmModalContent');
+            m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        }
+
+        async executeDelete() {
+            if(!this.deleteCandidateId) return;
+            const btn = document.getElementById('confirmDeleteBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                let path = 'products';
+                if(this.deleteCandidateType === 'category') path = 'categories';
+                if(this.deleteCandidateType === 'brand') path = 'brands';
+                await remove(ref(this.db, 'users/' + this.userId + '/' + path + '/' + this.deleteCandidateId));
+                UI.showToast("Đã xóa thành công");
+                this.closeConfirmModal();
+            } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
+            finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
+        }
     </script>
 </body>
 </html>
