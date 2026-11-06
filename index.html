@@ -141,6 +141,7 @@
                             <thead>
                                 <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
                                     <th class="px-6 py-4 font-medium">Mã SP</th>
+                                    <th class="px-6 py-4 font-medium">Phân loại</th>
                                     <th class="px-6 py-4 font-medium">Tên sản phẩm</th>
                                     <th class="px-6 py-4 font-medium text-right">Số lượng</th>
                                     <th class="px-6 py-4 font-medium text-right">Đơn giá</th>
@@ -182,9 +183,22 @@
             </div>
             <form id="productForm" class="p-6 space-y-4">
                 <input type="hidden" id="productId">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã Sản Phẩm *</label>
-                    <input type="text" id="productCode" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="VD: SP001">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phân Loại *</label>
+                        <select id="productCategory" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="" disabled selected>Chọn phân loại...</option>
+                            <option value="DT">Điện tử (DT)</option>
+                            <option value="TT">Thời trang (TT)</option>
+                            <option value="GD">Gia dụng (GD)</option>
+                            <option value="TP">Thực phẩm (TP)</option>
+                            <option value="KH">Khác (KH)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã Sản Phẩm</label>
+                        <input type="text" id="productCode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono font-bold" placeholder="Tự động sinh">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tên Sản Phẩm *</label>
@@ -199,6 +213,10 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Đơn Giá (VNĐ) *</label>
                         <input type="number" id="productPrice" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0">
                     </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã Barcode</label>
+                    <input type="text" id="productBarcode" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 font-mono tracking-widest" placeholder="Tự động sinh">
                 </div>
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
                     <button type="button" onclick="app.closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
@@ -323,22 +341,18 @@
             }
 
             bindEvents() {
-                // Mobile Menu Toggle
                 document.getElementById('mobileMenuBtn').addEventListener('click', () => {
                     const nav = document.getElementById('sidebarNav');
                     nav.classList.toggle('hidden');
                 });
 
-                // Search Input
                 document.getElementById('searchInput').addEventListener('input', (e) => {
                     this.searchQuery = e.target.value.toLowerCase();
                     this.renderProducts();
                 });
 
-                // Form Submit
                 document.getElementById('productForm').addEventListener('submit', (e) => this.handleSaveProduct(e));
 
-                // Modal clicks outside to close
                 document.getElementById('productModal').addEventListener('click', (e) => {
                     if(e.target === e.currentTarget) this.closeModal();
                 });
@@ -346,10 +360,38 @@
                     if(e.target === e.currentTarget) this.closeConfirmModal();
                 });
                 
-                // Confirm delete button
                 document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
                     this.executeDelete();
                 });
+
+                // Tự động sinh mã SP và Barcode khi chọn phân loại (Chỉ áp dụng khi thêm mới)
+                document.getElementById('productCategory').addEventListener('change', (e) => {
+                    const id = document.getElementById('productId').value;
+                    if (!id && e.target.value) {
+                        const prefix = e.target.value;
+                        document.getElementById('productCode').value = this.generateProductCode(prefix);
+                        document.getElementById('productBarcode').value = this.generateBarcode();
+                    }
+                });
+            }
+
+            // Thuật toán 1: Mã sản phẩm = 2 ký tự prefix + 4 ký tự Alphanumeric ngẫu nhiên
+            generateProductCode(prefix) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let randomStr = '';
+                for (let i = 0; i < 4; i++) {
+                    randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return `${prefix}${randomStr}`;
+            }
+
+            // Thuật toán 2: Mã Barcode = Chuỗi 12 số ngẫu nhiên
+            generateBarcode() {
+                let barcode = '';
+                for(let i = 0; i < 12; i++) {
+                    barcode += Math.floor(Math.random() * 10).toString();
+                }
+                return barcode;
             }
 
             switchView(viewName) {
@@ -446,7 +488,8 @@
 
                 const filtered = this.products.filter(p => {
                     return p.name.toLowerCase().includes(this.searchQuery) || 
-                           p.code.toLowerCase().includes(this.searchQuery);
+                           p.code.toLowerCase().includes(this.searchQuery) ||
+                           (p.barcode && p.barcode.includes(this.searchQuery));
                 });
 
                 if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
@@ -456,15 +499,25 @@
                     emptyState.classList.add('hidden');
                     tbody.parentElement.classList.remove('hidden');
                     
+                    const categoryMap = { 'DT': 'Điện tử', 'TT': 'Thời trang', 'GD': 'Gia dụng', 'TP': 'Thực phẩm', 'KH': 'Khác' };
+
                     filtered.forEach(p => {
                         const isLowStock = p.quantity < 10;
                         const qtyBadgeClass = isLowStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+                        const catName = categoryMap[p.category] || p.category || 'Khác';
+                        const barcodeUI = p.barcode ? `<div class="text-xs text-gray-400 mt-1 font-mono"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : '';
                         
                         const tr = document.createElement('tr');
                         tr.className = "hover:bg-gray-50 transition-colors group";
                         tr.innerHTML = `
                             <td class="px-6 py-4 font-semibold text-gray-800">${p.code}</td>
-                            <td class="px-6 py-4 font-medium text-gray-700">${p.name}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200">${catName}</span>
+                            </td>
+                            <td class="px-6 py-4 font-medium text-gray-700">
+                                ${p.name}
+                                ${barcodeUI}
+                            </td>
                             <td class="px-6 py-4 text-right">
                                 <span class="px-3 py-1 rounded-full text-xs font-bold ${qtyBadgeClass}">
                                     ${p.quantity}
@@ -495,23 +548,28 @@
                 
                 form.reset();
                 document.getElementById('productId').value = '';
+                
+                // Reset các input tự động sinh
+                document.getElementById('productCode').value = '';
+                document.getElementById('productBarcode').value = '';
 
                 if (id) {
                     title.innerText = 'Sửa Sản Phẩm';
                     const product = this.products.find(p => p.id === id);
                     if(product) {
                         document.getElementById('productId').value = product.id;
+                        document.getElementById('productCategory').value = product.category || 'KH';
                         document.getElementById('productCode').value = product.code;
                         document.getElementById('productName').value = product.name;
                         document.getElementById('productQuantity').value = product.quantity;
                         document.getElementById('productPrice').value = product.price;
+                        document.getElementById('productBarcode').value = product.barcode || '';
                     }
                 } else {
                     title.innerText = 'Thêm Sản Phẩm Mới';
                 }
 
                 modal.classList.remove('hidden');
-                // Trigger reflow
                 void modal.offsetWidth;
                 modal.classList.remove('opacity-0');
                 content.classList.remove('scale-95');
@@ -539,25 +597,25 @@
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
 
                 const id = document.getElementById('productId').value;
-                const code = document.getElementById('productCode').value.toUpperCase().trim();
+                const category = document.getElementById('productCategory').value;
+                
+                // Trường hợp hiếm khi form bị submit trước khi kịp sinh mã
+                let code = document.getElementById('productCode').value.toUpperCase().trim();
+                let barcode = document.getElementById('productBarcode').value.trim();
+                if (!id && !code) {
+                    code = this.generateProductCode(category);
+                    barcode = this.generateBarcode();
+                }
+
                 const name = document.getElementById('productName').value.trim();
                 const quantity = parseInt(document.getElementById('productQuantity').value, 10);
                 const price = parseFloat(document.getElementById('productPrice').value);
 
                 const productData = {
-                    code, name, quantity, price, updatedAt: new Date().toISOString()
+                    category, code, name, quantity, price, barcode, updatedAt: new Date().toISOString()
                 };
 
                 try {
-                    // Check duplicate code if new or changed
-                    const isDuplicate = this.products.some(p => p.code === code && p.id !== id);
-                    if(isDuplicate) {
-                        UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error");
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
-                        return;
-                    }
-
                     if (id) {
                         const docRef = ref(this.db, 'users/' + this.userId + '/products/' + id);
                         await update(docRef, productData);
