@@ -1601,15 +1601,35 @@
                     
                     const imgData = canvas.toDataURL('image/png');
                     
-                    // Tự động tải ảnh về máy để dễ dàng chọn in trong Zlabel
-                    const a = document.createElement('a');
-                    a.href = imgData;
-                    a.download = `tem_${this.currentPrintId}_${Date.now()}.png`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
-                    UI.showToast("Đã tải ảnh tem về máy! Bạn mở Zlabel để chọn ảnh in.", "success");
+                    const printWindow = window.open('', '_blank');
+                    if(printWindow) {
+                        printWindow.document.write(`
+                            <html>
+                                <head><title>In Nhãn</title></head>
+                                <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#fff;">
+                                    <img src="${imgData}" style="width:${this.currentPrintWidth}mm;height:${this.currentPrintHeight}mm;object-fit:contain;" />
+                                    <script>
+                                        window.onload = function() {
+                                            setTimeout(() => {
+                                                window.print();
+                                                window.close();
+                                            }, 500);
+                                        };
+                                    <\/script>
+                                </body>
+                            </html>
+                        `);
+                        printWindow.document.close();
+                    } else {
+                        // Fallback cho iOS Safari nếu bị chặn popup
+                        const a = document.createElement('a');
+                        a.href = imgData;
+                        a.download = `label_${this.currentPrintId}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        UI.showToast("Đã lưu ảnh nhãn. Bạn có thể mở ảnh để in qua App.", "info");
+                    }
                     this.closePrintPreview();
                 } catch (error) {
                     console.error("Lỗi tạo ảnh in:", error);
