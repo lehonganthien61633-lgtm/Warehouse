@@ -170,7 +170,7 @@
                                         <th class="px-6 py-4 font-medium min-w-[300px]">Tên sản phẩm</th>
                                         <th class="px-6 py-4 font-medium text-right">Số lượng</th>
                                         <th class="px-6 py-4 font-medium text-right min-w-[120px]">Đơn giá</th>
-                                        <th class="px-6 py-4 font-medium text-right w-24">Thao tác</th>
+                                        <th class="px-6 py-4 font-medium text-right w-36">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="productsTableBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
@@ -435,6 +435,68 @@
         </div>
     </div>
 
+    <!-- Modal: Cài đặt In Nhãn -->
+    <div id="printSettingsModal" class="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 relative flex flex-col" id="printSettingsContent">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-gray-800">Cài đặt In Nhãn</h3>
+                <button type="button" onclick="app.closePrintSettings()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4 text-left">
+                <label class="block text-sm font-medium text-gray-700">Kích thước giấy in</label>
+                <div class="flex gap-4 mb-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printSize" value="40x30" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                        <span class="text-sm font-medium">40x30 mm</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printSize" value="50x30" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                        <span class="text-sm font-medium">50x30 mm</span>
+                    </label>
+                </div>
+                
+                <label class="flex items-center gap-2 mt-2 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" id="printBoxLabel" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                    In nhãn cho vỏ hộp (Hiển thị "Vỏ hộp")
+                </label>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 rounded-b-xl">
+                <button type="button" onclick="app.closePrintSettings()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
+                <button type="button" onclick="app.generatePreview()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                    Tiếp tục <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Xem trước Nhãn In -->
+    <div id="printPreviewModal" class="fixed inset-0 bg-black/50 z-[90] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg transform scale-95 transition-transform duration-300 relative flex flex-col" id="printPreviewContent">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-gray-800">Xem trước nhãn in</h3>
+                <button type="button" onclick="app.closePrintPreview()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 bg-gray-200 flex justify-center items-center overflow-auto rounded-b-xl" style="min-height: 250px;">
+                <!-- Vùng chứa bản preview ảo -->
+                <div id="labelPreviewContainer" style="background: white; border-radius: 4px; padding: 2mm; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform-origin: top center; transform: scale(1.5);">
+                    <!-- Nội dung label sẽ chèn vào đây -->
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-between rounded-b-xl">
+                <button type="button" onclick="app.backToPrintSettings()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
+                </button>
+                <button type="button" onclick="app.executePrint()" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> In nhãn
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[90] flex flex-col gap-2 pointer-events-none"></div>
 
@@ -474,7 +536,7 @@
                 this.products = [];
                 this.categories = [];
                 this.brands = [];
-                this.locations = []; // Thêm array locations
+                this.locations = []; 
                 this.searchQuery = '';
                 this.currentView = 'dashboard';
                 
@@ -486,6 +548,13 @@
                 
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
+
+                // Các biến lưu trạng thái in
+                this.currentPrintId = null;
+                this.currentPrintWidth = 50;
+                this.currentPrintHeight = 30;
+                this.currentPrintIsBox = false;
+                this.currentPrintHtml = '';
                 
                 this.initApp();
                 this.bindEvents();
@@ -497,7 +566,6 @@
                     const app = initializeApp(firebaseConfig);
                     this.db = getDatabase(app);
                     
-                    // Cấu trúc phẳng root
                     this.productsRef = ref(this.db, 'products');
                     this.categoriesRef = ref(this.db, 'categories');
                     this.brandsRef = ref(this.db, 'brands');
@@ -857,8 +925,9 @@
                                 </td>
                                 <td class="px-6 py-4 text-right align-top w-32">${qtyUI}</td>
                                 <td class="px-6 py-4 text-right font-medium text-blue-600 align-top w-32">${UI.formatCurrency(p.price)}</td>
-                                <td class="px-6 py-4 text-right align-top w-24">
+                                <td class="px-6 py-4 text-right align-top w-36">
                                     <div class="flex justify-end gap-2 opacity-100 transition-opacity">
+                                        <button onclick="app.openPrintSettings('${p.id}')" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white flex items-center justify-center transition-colors" title="In nhãn"><i class="fa-solid fa-print text-sm"></i></button>
                                         <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
                                         <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
@@ -882,7 +951,7 @@
                 qInput.value = '';
 
                 document.getElementById('productPurchasePlace').value = '';
-                document.getElementById('productHasBox').checked = false;
+                document.getElementById('saveNewPlaceCheckbox').checked = false;
 
                 if (id) {
                     document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
@@ -953,9 +1022,9 @@
                 }
 
                 const purchasePlace = document.getElementById('productPurchasePlace').value.trim();
-                const hasBox = document.getElementById('productHasBox').checked;
+                const isSavePlace = document.getElementById('saveNewPlaceCheckbox').checked;
 
-                if (purchasePlace) {
+                if (isSavePlace && purchasePlace) {
                     const safeKey = this.cleanKey(purchasePlace);
                     if (!this.locations.some(l => l.id === safeKey)) {
                         await set(ref(this.db, 'locations/' + safeKey), { name: purchasePlace, id: safeKey });
@@ -977,7 +1046,7 @@
                     price: parseFloat(document.getElementById('productPrice').value),
                     purchaseDate: document.getElementById('productPurchaseDate').value,
                     purchasePlace: purchasePlace,
-                    hasBox: hasBox,
+                    hasBox: document.getElementById('productHasBox').checked,
                     trackQuantity,
                     quantity: finalQty,
                     updatedAt: new Date().toISOString()
@@ -1076,7 +1145,6 @@
                     
                     if(type === 'category') {
                         const prefix = document.getElementById('configPrefix').value.trim().toUpperCase();
-                        // Dùng prefix làm key để không đổi mã khi đổi tên
                         const safeKey = prefix;
                         
                         if(!oldId && this.categories.some(c => c.id === safeKey)) { 
@@ -1091,7 +1159,6 @@
                         }
                         
                         if (oldId && oldId !== safeKey) {
-                            // Update cascading for renamed brand
                             this.products.forEach(p => {
                                 if(p.brand === oldId) updates[`products/${p.id}/brand`] = safeKey;
                             });
@@ -1108,7 +1175,6 @@
                         }
                         
                         if (oldId && oldId !== safeKey) {
-                            // Update cascading for renamed location
                             this.products.forEach(p => {
                                 if(p.purchasePlace === oldId) updates[`products/${p.id}/purchasePlace`] = safeKey;
                             });
@@ -1152,10 +1218,6 @@
                     this.closeConfirmModal();
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
-            }
-
-            logout() {
-                window.location.reload();
             }
 
             triggerQuickAdjust() {
@@ -1248,6 +1310,143 @@
                 if (list.children.length > 5) {
                     list.removeChild(list.lastChild);
                 }
+            }
+
+            // ================= IN NHÃN =================
+            openPrintSettings(id) {
+                this.currentPrintId = id;
+                document.getElementById('printBoxLabel').checked = false;
+                
+                const m = document.getElementById('printSettingsModal'); 
+                const c = document.getElementById('printSettingsContent');
+                m.classList.remove('hidden'); void m.offsetWidth;
+                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+            }
+
+            closePrintSettings() {
+                const m = document.getElementById('printSettingsModal'); 
+                const c = document.getElementById('printSettingsContent');
+                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            generatePreview() {
+                const p = this.products.find(x => x.id === this.currentPrintId);
+                if(!p) return;
+
+                const sizeVal = document.querySelector('input[name="printSize"]:checked').value;
+                const [w, h] = sizeVal.split('x');
+                this.currentPrintWidth = parseInt(w);
+                this.currentPrintHeight = parseInt(h);
+                this.currentPrintIsBox = document.getElementById('printBoxLabel').checked;
+
+                const catObj = this.categories.find(c => c.id === p.category);
+                const brandObj = this.brands.find(b => b.id === p.brand);
+                const placeObj = this.locations.find(l => l.id === p.purchasePlace);
+                
+                let dateStr = '';
+                if (p.purchaseDate) {
+                    const d = new Date(p.purchaseDate);
+                    dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+                }
+
+                // Căn chỉnh CSS HTML nội dung in giống ảnh mẫu
+                this.currentPrintHtml = `
+                    <div style="font-family: Arial, sans-serif; color: #000; box-sizing: border-box; display: flex; flex-direction: column; width: 100%; height: 100%; padding: 2mm; overflow: hidden; background: #fff;">
+                        <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 4px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-right: 6px;">
+                                <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
+                            </svg>
+                            <div style="font-size: 11px; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
+                        </div>
+                        <div style="font-size: 10.5px; font-weight: bold; margin-bottom: 3px;">Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}</div>
+                        <div style="font-size: 10px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tên sản phẩm: ${p.name || ''}</div>
+                        <div style="font-size: 10px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hãng sản xuất: ${brandObj ? brandObj.name : ''}</div>
+                        <div style="font-size: 10px; margin-bottom: 2px;">Giá tiền: ${UI.formatCurrency(p.price || 0)}</div>
+                        <div style="font-size: 10px; margin-bottom: 2px;">Ngày mua: ${dateStr}</div>
+                        <div style="font-size: 10px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nơi mua: ${placeObj ? placeObj.name : (p.purchasePlace || '')}</div>
+                        <div style="text-align: right; margin-top: auto; font-size: 10px;">Phân loại: ${catObj ? catObj.name : ''}</div>
+                    </div>
+                `;
+
+                const container = document.getElementById('labelPreviewContainer');
+                container.style.width = `${this.currentPrintWidth}mm`;
+                container.style.height = `${this.currentPrintHeight}mm`;
+                container.innerHTML = this.currentPrintHtml;
+
+                this.closePrintSettings();
+                
+                setTimeout(() => {
+                    const m = document.getElementById('printPreviewModal'); 
+                    const c = document.getElementById('printPreviewContent');
+                    m.classList.remove('hidden'); void m.offsetWidth;
+                    m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+                }, 300);
+            }
+
+            backToPrintSettings() {
+                this.closePrintPreview();
+                setTimeout(() => {
+                    this.openPrintSettings(this.currentPrintId);
+                }, 300);
+            }
+
+            closePrintPreview() {
+                const m = document.getElementById('printPreviewModal'); 
+                const c = document.getElementById('printPreviewContent');
+                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            executePrint() {
+                const iframe = document.createElement('iframe');
+                iframe.style.position = 'absolute';
+                iframe.style.width = '0px';
+                iframe.style.height = '0px';
+                iframe.style.border = 'none';
+                document.body.appendChild(iframe);
+
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>In Nhãn</title>
+                        <style>
+                            @page {
+                                size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                                width: ${this.currentPrintWidth}mm;
+                                height: ${this.currentPrintHeight}mm;
+                                padding: 0;
+                                box-sizing: border-box;
+                            }
+                            * {
+                                margin: 0;
+                                padding: 0;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${this.currentPrintHtml}
+                    </body>
+                    </html>
+                `);
+                doc.close();
+
+                iframe.contentWindow.focus();
+                
+                setTimeout(() => {
+                    iframe.contentWindow.print();
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        this.closePrintPreview();
+                    }, 500);
+                }, 250);
             }
         }
 
