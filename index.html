@@ -629,6 +629,18 @@
             }
 
             async initApp() {
+                // Thêm timeout an toàn 5 giây để luôn mở UI dù Firebase chậm/lỗi
+                setTimeout(() => {
+                    const loadingScreen = document.getElementById('loading-screen');
+                    if (loadingScreen && loadingScreen.style.display !== 'none') {
+                        loadingScreen.style.display = 'none';
+                        const appContainer = document.getElementById('app-container');
+                        appContainer.style.display = 'flex';
+                        appContainer.classList.remove('hidden');
+                        UI.showToast("Bỏ qua đồng bộ do quá trình tải mất quá nhiều thời gian.", "info");
+                    }
+                }, 5000);
+
                 try {
                     const firebaseConfig = { databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/" };
                     const app = initializeApp(firebaseConfig);
@@ -647,71 +659,72 @@
                     UI.showToast("Không thể khởi tạo CSDL", "error");
                 }
             }
-listenToData() {
+
+            listenToData() {
                 let dataLoaded = { products: false, categories: false, brands: false, locations: false, sealLocations: false };
                 
                 const checkAllLoaded = () => {
                     if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands && dataLoaded.locations && dataLoaded.sealLocations) {
-                        document.getElementById('loading-screen').style.display = 'none';
-                        document.getElementById('app-container').style.display = 'flex';
-                        document.getElementById('app-container').classList.remove('hidden');
+                        const loadingScreen = document.getElementById('loading-screen');
+                        if (loadingScreen.style.display !== 'none') {
+                            loadingScreen.style.display = 'none';
+                            const appContainer = document.getElementById('app-container');
+                            appContainer.style.display = 'flex';
+                            appContainer.classList.remove('hidden');
+                        }
                     }
                 }
 
-                onValue(this.productsRef, (snapshot) => {
-                    this.products = [];
+                // Cập nhật cách xử lý khi onValue được gọi
+                const handleSnapshot = (snapshot, targetArray, idField = true) => {
+                    const temp = [];
                     if (snapshot.exists()) {
                         snapshot.forEach((child) => {
-                            this.products.push({ id: child.key, ...child.val() });
+                            if (idField) {
+                                temp.push({ id: child.key, ...child.val() });
+                            } else {
+                                temp.push(child.val());
+                            }
                         });
                     }
+                    return temp;
+                };
+
+                onValue(this.productsRef, (snapshot) => {
+                    this.products = handleSnapshot(snapshot, this.products);
                     if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
-                    
                     this.render();
                     dataLoaded.products = true; checkAllLoaded();
                 });
 
                 onValue(this.categoriesRef, (snapshot) => {
-                    this.categories = [];
-                    if (snapshot.exists()) {
-                        snapshot.forEach((child) => { this.categories.push({ id: child.key, ...child.val() }); });
-                    }
+                    this.categories = handleSnapshot(snapshot, this.categories);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.categories = true; checkAllLoaded();
                 });
 
                 onValue(this.brandsRef, (snapshot) => {
-                    this.brands = [];
-                    if (snapshot.exists()) {
-                        snapshot.forEach((child) => { this.brands.push({ id: child.key, ...child.val() }); });
-                    }
+                    this.brands = handleSnapshot(snapshot, this.brands);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.brands = true; checkAllLoaded();
                 });
 
                 onValue(this.locationsRef, (snapshot) => {
-                    this.locations = [];
-                    if (snapshot.exists()) {
-                        snapshot.forEach((child) => { this.locations.push({ id: child.key, ...child.val() }); });
-                    }
+                    this.locations = handleSnapshot(snapshot, this.locations);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.locations = true; checkAllLoaded();
                 });
 
                 onValue(this.sealLocationsRef, (snapshot) => {
-                    this.sealLocations = [];
-                    if (snapshot.exists()) {
-                        snapshot.forEach((child) => { this.sealLocations.push({ id: child.key, ...child.val() }); });
-                    }
+                    this.sealLocations = handleSnapshot(snapshot, this.sealLocations);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.sealLocations = true; checkAllLoaded();
                 });
             }
-
             bindEvents() {
                 document.getElementById('mobileMenuBtn').addEventListener('click', () => {
                     document.getElementById('sidebarNav').classList.toggle('hidden');
