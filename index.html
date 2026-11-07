@@ -1554,39 +1554,39 @@
                     const brandObj = this.brands.find(b => b.id === p.brand);
                     const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                     
-                    // Tăng kích thước và mức độ chi tiết (High) của QR Code để khi in ra rõ nét hơn
+                    // SỬA Ở ĐÂY: Tăng size lên 1000 pixel để tạo ảnh gốc cực nét, level 'H' để tăng khả năng sửa lỗi khi in
                     const qrValue = p.sku || p.code || 'N/A';
-                    const qrBase64 = new QRious({ value: qrValue, size: 250, level: 'H' }).toDataURL('image/jpeg', 1.0);
+                    const qrBase64 = new QRious({ value: qrValue, size: 1000, level: 'H' }).toDataURL('image/jpeg', 1.0);
                     
-                    // Cấu trúc HTML Nhãn Thông tin: Tăng kích thước khu vực QR Code
+                    // Cấu trúc HTML Nhãn Thông tin
                     this.currentPrintHtml = `
-                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
+                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
                             
                             <!-- Header có logo -->
-                            <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 0.5mm; margin-bottom: 1mm; justify-content: flex-start;">
+                            <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm; justify-content: flex-start;">
                                 <svg viewBox="0 0 24 24" fill="currentColor" style="height: 3.5mm; width: 3.5mm; flex-shrink: 0; margin-right: 1mm;">
                                     <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
                                 </svg>
-                                <div style="font-size: 7pt; font-weight: bold;">Quản lý sản phẩm</div>
+                                <div style="font-size: 7pt; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
                             </div>
                             
                             <!-- Tiêu đề Thông tin -->
-                            <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 1mm;">
+                            <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
                                 Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                             </div>
                             
-                            <!-- Các dòng thông tin và QR Code được phóng to -->
-                            <div style="display: flex; flex-grow: 1; align-items: flex-start; gap: 1mm; overflow: hidden;">
-                                <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.3mm; flex-grow: 1; word-break: break-word; white-space: normal; min-width: 0;">
+                            <!-- Các dòng thông tin và QR Code -->
+                            <div style="display: flex; flex-grow: 1; align-items: center; gap: 0.5mm; overflow: hidden;">
+                                <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal; min-width: 0;">
                                     <div><span>Tên: </span><span style="font-weight: bold;">${p.name || ''}</span></div>
                                     <div><span>Hãng: </span><span>${brandObj ? brandObj.name : ''}</span></div>
                                     <div><span>Giá: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span></div>
-                                    <div><span>SKU: </span><span style="font-weight: bold;">${p.sku || ''}</span></div>
+                                    <div><span>SKU: </span><span>${p.sku || ''}</span></div>
                                     <div><span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span></div>
                                 </div>
-                                <!-- Tăng width/height của bao chứa QR Code lên khoảng 12-14mm (tùy thuộc không gian tem) -->
-                                <div style="width: 14mm; height: 14mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center; border: 1px solid #ddd; padding: 0.5mm; border-radius: 2px;">
-                                    <img src="${qrBase64}" style="width: 100%; height: 100%; display: block; image-rendering: pixelated;" />
+                                <!-- SỬA Ở ĐÂY: Kích thước chốt 10x10mm nhưng thêm image-rendering: pixelated để chống mờ ảnh -->
+                                <div style="width: 10mm; height: 10mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center;">
+                                    <img src="${qrBase64}" style="width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges;" />
                                 </div>
                             </div>
 
@@ -1596,21 +1596,25 @@
                             </div>
                         </div>
                     `;
-                } else if (printType === 'seal') {
+                }
+                else if (printType === 'seal') {
                     const sealLoc = document.getElementById('printSealLocation').value.trim();
                     if (!sealLoc) {
                         UI.showToast("Vui lòng nhập vị trí niêm phong!", "error");
                         return;
                     }
                     
+                    // Tự động ghi dữ liệu vào thiết lập nếu chưa có
                     const safeKey = this.cleanKey(sealLoc);
                     if (!this.sealLocations.some(l => l.id === safeKey)) {
                         set(ref(this.db, 'sealLocations/' + safeKey), { name: sealLoc, id: safeKey });
                     }
 
+                    // Format thời gian hiện tại
                     const now = new Date();
                     const dtStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}-${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
 
+                    // Cấu trúc HTML Nhãn Niêm phong
                     this.currentPrintHtml = `
                         <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.2; border: 1.5px solid #000;">
                             <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1.5mm; background: #000; color: #fff; padding: 0.8mm; border-radius: 2px;">
@@ -1642,13 +1646,6 @@
                     const c = document.getElementById('printPreviewContent');
                     m.classList.remove('hidden'); void m.offsetWidth;
                     m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
-                }, 300);
-            }
-
-            backToPrintSettings() {
-                this.closePrintPreview();
-                setTimeout(() => {
-                    this.openPrintSettings(this.currentPrintId);
                 }, 300);
             }
 
