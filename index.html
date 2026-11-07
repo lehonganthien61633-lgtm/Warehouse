@@ -846,6 +846,30 @@
                 this.render();
                 if(window.innerWidth < 768) document.getElementById('sidebarNav').classList.add('hidden');
             }
+            switchConfigTab(tabName) {
+                // Reset giao diện các nút Tab
+                document.querySelectorAll('.config-tab-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-100', 'text-blue-700', 'font-semibold');
+                    btn.classList.add('text-gray-500', 'hover:bg-gray-100', 'hover:text-gray-900', 'font-medium');
+                });
+                // Highlight nút Tab đang active
+                const activeBtn = document.getElementById(`tab-${tabName}`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('text-gray-500', 'hover:bg-gray-100', 'hover:text-gray-900', 'font-medium');
+                    activeBtn.classList.add('bg-blue-100', 'text-blue-700', 'font-semibold');
+                }
+
+                // Ẩn tất cả các bảng (Panel)
+                document.querySelectorAll('.config-panel').forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+                
+                // Chỉ hiển thị bảng được chọn
+                const activePanel = document.getElementById(`panel-${tabName}`);
+                if (activePanel) {
+                    activePanel.classList.remove('hidden');
+                }
+            }
 
             render() {
                 if (this.currentView === 'dashboard') this.renderDashboard();
