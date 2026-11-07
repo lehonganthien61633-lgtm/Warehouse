@@ -540,7 +540,7 @@
 
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[90] flex flex-col gap-2 pointer-events-none"></div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, onValue, update, remove, set, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
@@ -1496,7 +1496,7 @@
                             
                             <!-- Tiêu đề Thông tin -->
                             <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
-                                Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
+                                Thông tái sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                             </div>
                             
                             <!-- Các dòng thông tin dùng lưới linh hoạt -->
@@ -1590,53 +1590,51 @@
                 setTimeout(() => m.classList.add('hidden'), 300);
             }
 
-            executePrint() {
-                const iframe = document.createElement('iframe');
-                iframe.style.position = 'absolute';
-                iframe.style.width = '0px';
-                iframe.style.height = '0px';
-                iframe.style.border = 'none';
-                document.body.appendChild(iframe);
-
-                const doc = iframe.contentWindow.document;
-                doc.open();
-                // Trang in thật thiết lập Landscape tự động xoay ngang máy in
-                doc.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>In Nhãn</title>
-                        <style>
-                            @page {
-                                size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
-                                margin: 0;
-                            }
-                            body {
-                                margin: 0;
-                                padding: 0;
-                            }
-                            * {
-                                margin: 0;
-                                padding: 0;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        ${this.currentPrintHtml}
-                    </body>
-                    </html>
-                `);
-                doc.close();
-
-                iframe.contentWindow.focus();
-                
-                setTimeout(() => {
-                    iframe.contentWindow.print();
-                    setTimeout(() => {
-                        document.body.removeChild(iframe);
-                        this.closePrintPreview();
-                    }, 500);
-                }, 250);
+            async executePrint() {
+                try {
+                    const container = document.getElementById('labelPreviewContainer');
+                    const canvas = await html2canvas(container, {
+                        scale: 3, 
+                        useCORS: true,
+                        logging: false
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    const printWindow = window.open('', '_blank');
+                    if(printWindow) {
+                        printWindow.document.write(`
+                            <html>
+                                <head><title>In Nhãn</title></head>
+                                <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#fff;">
+                                    <img src="${imgData}" style="width:${this.currentPrintWidth}mm;height:${this.currentPrintHeight}mm;object-fit:contain;" />
+                                    <script>
+                                        window.onload = function() {
+                                            setTimeout(() => {
+                                                window.print();
+                                                window.close();
+                                            }, 500);
+                                        };
+                                    <\/script>
+                                </body>
+                            </html>
+                        `);
+                        printWindow.document.close();
+                    } else {
+                        // Fallback cho iOS Safari nếu bị chặn popup
+                        const a = document.createElement('a');
+                        a.href = imgData;
+                        a.download = `label_${this.currentPrintId}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        UI.showToast("Đã lưu ảnh nhãn. Bạn có thể mở ảnh để in qua App.", "info");
+                    }
+                    this.closePrintPreview();
+                } catch (error) {
+                    console.error("Lỗi tạo ảnh in:", error);
+                    UI.showToast("Không thể tạo bản in, vui lòng thử lại.", "error");
+                }
             }
         }
 
