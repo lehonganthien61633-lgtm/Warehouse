@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống Quản lý kho WMS</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -99,11 +97,13 @@
                     </div>
 
                     <!-- Quét nhanh điều chỉnh tồn kho -->
-                    <div class="w-full sm:w-auto flex gap-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng</h3>
+                            <p class="text-sm text-gray-500 mt-1">Nhập Serial / SKU / Mã SP để xuất hoặc nhập kho.</p>
+                        </div>
+                        <div class="w-full sm:w-auto flex gap-2">
                             <input type="text" id="quickAdjustInput" class="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Nhập Serial / SKU / Mã SP...">
-                            <button onclick="app.openScanner()" class="px-3 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-200 transition-colors shadow-sm flex items-center justify-center" title="Quét bằng Camera">
-                                <i class="fa-solid fa-qrcode text-lg"></i>
-                            </button>
                             <button onclick="app.triggerQuickAdjust()" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap">
                                 Tìm kiếm
                             </button>
@@ -537,23 +537,7 @@
             </div>
         </div>
     </div>
-    <!-- Modal: Quét Camera QR / Barcode -->
-    <div id="scannerModal" class="fixed inset-0 bg-black/50 z-[95] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300 relative flex flex-col" id="scannerModalContent">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                <h3 class="font-bold text-lg text-gray-800">Quét mã QR / Barcode</h3>
-                <button type="button" onclick="app.closeScanner()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                    <i class="fa-solid fa-times text-xl"></i>
-                </button>
-            </div>
-            <div class="p-4 bg-gray-900 flex justify-center items-center relative min-h-[300px]">
-                <div id="reader" style="width: 100%; border-radius: 8px; overflow: hidden; background: #000;"></div>
-            </div>
-            <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-end rounded-b-xl">
-                <button type="button" onclick="app.closeScanner()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Đóng Camera</button>
-            </div>
-        </div>
-    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[90] flex flex-col gap-2 pointer-events-none"></div>
 
@@ -1498,11 +1482,7 @@
                     const brandObj = this.brands.find(b => b.id === p.brand);
                     const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                     
-                    // Tạo ảnh QR Code dạng Base64
-                    const qrValue = p.sku || p.code || 'N/A';
-                    const qrBase64 = new QRious({ value: qrValue, size: 120, level: 'M' }).toDataURL();
-                    
-                    // Cấu trúc HTML Nhãn Thông tin chia cột (Thông tin - QR)
+                    // Cấu trúc HTML Nhãn Thông tin
                     this.currentPrintHtml = `
                         <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
                             
@@ -1519,17 +1499,22 @@
                                 Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                             </div>
                             
-                            <!-- Các dòng thông tin và QR Code -->
-                            <div style="display: flex; flex-grow: 1; align-items: center; gap: 0.5mm; overflow: hidden;">
-                                <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal; min-width: 0;">
-                                    <div><span>Tên: </span><span style="font-weight: bold;">${p.name || ''}</span></div>
-                                    <div><span>Hãng: </span><span>${brandObj ? brandObj.name : ''}</span></div>
-                                    <div><span>Giá: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span></div>
-                                    <div><span>SKU: </span><span>${p.sku || ''}</span></div>
-                                    <div><span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span></div>
+                            <!-- Các dòng thông tin dùng lưới linh hoạt -->
+                            <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal;">
+                                <div>
+                                    <span>Tên sản phẩm: </span><span>${p.name || ''}</span>
                                 </div>
-                                <div style="width: 10mm; height: 10mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center;">
-                                    <img src="${qrBase64}" style="max-width: 100%; max-height: 100%; display: block;" />
+                                <div>
+                                    <span>Hãng sản xuất: </span><span>${brandObj ? brandObj.name : ''}</span>
+                                </div>
+                                <div>
+                                    <span>Giá tiền: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
+                                </div>
+                                <div>
+                                    <span>SKU: </span><span>${p.sku || ''}</span>
+                                </div>
+                                <div>
+                                    <span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span>
                                 </div>
                             </div>
 
@@ -1539,8 +1524,7 @@
                             </div>
                         </div>
                     `;
-                }
-                else if (printType === 'seal') {
+                } else if (printType === 'seal') {
                     const sealLoc = document.getElementById('printSealLocation').value.trim();
                     if (!sealLoc) {
                         UI.showToast("Vui lòng nhập vị trí niêm phong!", "error");
@@ -1653,47 +1637,6 @@
                         this.closePrintPreview();
                     }, 500);
                 }, 250);
-            }
-            openScanner() {
-                const m = document.getElementById('scannerModal'); 
-                const c = document.getElementById('scannerModalContent');
-                m.classList.remove('hidden'); void m.offsetWidth;
-                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
-
-                if (this.html5QrcodeScanner) {
-                    this.html5QrcodeScanner.clear();
-                }
-
-                this.html5QrcodeScanner = new Html5Qrcode("reader");
-                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                
-                // Mở camera sau
-                this.html5QrcodeScanner.start(
-                    { facingMode: "environment" }, 
-                    config, 
-                    (decodedText) => {
-                        // Thành công
-                        this.closeScanner();
-                        document.getElementById('quickAdjustInput').value = decodedText;
-                        UI.showToast("Đã quét mã thành công!", "success");
-                        this.triggerQuickAdjust();
-                    }, 
-                    (error) => { /* Bỏ qua lỗi nền (không tìm thấy qr) */ }
-                ).catch(err => {
-                    UI.showToast("Không thể mở Camera. Vui lòng cấp quyền truy cập máy ảnh.", "error");
-                });
-            }
-
-            closeScanner() {
-                if (this.html5QrcodeScanner) {
-                    this.html5QrcodeScanner.stop().then(() => {
-                        this.html5QrcodeScanner.clear();
-                    }).catch(err => console.error("Lỗi tắt camera:", err));
-                }
-                const m = document.getElementById('scannerModal'); 
-                const c = document.getElementById('scannerModalContent');
-                m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
-                setTimeout(() => m.classList.add('hidden'), 300);
             }
         }
 
