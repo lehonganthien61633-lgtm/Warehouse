@@ -482,7 +482,7 @@
             </div>
             <div class="p-6 bg-gray-200 flex justify-center items-center overflow-auto rounded-b-xl" style="min-height: 250px;">
                 <!-- Vùng chứa bản preview ảo -->
-                <div id="labelPreviewContainer" style="background: white; border-radius: 4px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform-origin: top center; transform: scale(1.5);">
+                <div id="labelPreviewContainer" style="background: white; border-radius: 4px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform-origin: top center;">
                     <!-- Nội dung label sẽ chèn vào đây -->
                 </div>
             </div>
@@ -1352,55 +1352,51 @@
 
                 // Cấu trúc HTML dùng Flexbox co giãn chữ (cấu hình responsive mm)
                 this.currentPrintHtml = `
-                    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; box-sizing: border-box; display: flex; flex-direction: column; width: 100%; height: 100%; padding: 4%; background: #fff; line-height: 1.35;">
+                    <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 2mm 3mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.2;">
                         
                         <!-- Header có logo -->
-                        <div style="display: flex; align-items: center; border-bottom: 1.5px solid #000; padding-bottom: 2%; margin-bottom: 2%;">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="height: 14vh; margin-right: 4%;">
+                        <div style="display: flex; align-items: center; border-bottom: 1.5px solid #000; padding-bottom: 1.5mm; margin-bottom: 1.5mm;">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="height: 5.5mm; width: 5.5mm; flex-shrink: 0; margin-right: 2mm;">
                                 <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
                             </svg>
-                            <div style="font-size: 13vh; font-weight: bold; flex-grow: 1;">Bộ phận Quản lý sản phẩm</div>
+                            <div style="font-size: 11pt; font-weight: bold; margin-top: 1.5mm;">Bộ phận Quản lý sản phẩm</div>
                         </div>
                         
                         <!-- Tiêu đề Thông tin -->
-                        <div style="font-size: 12vh; font-weight: bold; margin-bottom: 2%;">
+                        <div style="font-size: 10pt; font-weight: bold; margin-bottom: 1mm;">
                             Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                         </div>
                         
                         <!-- Các dòng thông tin dùng lưới linh hoạt -->
-                        <div style="font-size: 11vh; display: flex; flex-direction: column; gap: 1%; flex-grow: 1; justify-content: flex-start; overflow:hidden;">
+                        <div style="font-size: 9pt; display: flex; flex-direction: column; gap: 0.8mm; flex-grow: 1;">
                             <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                <span>Tên sản phẩm: </span><span style="font-weight: 500;">${p.name || ''}</span>
+                                <span>Tên sản phẩm: </span><span>${p.name || ''}</span>
                             </div>
                             <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                <span>Hãng sản xuất: </span><span style="font-weight: 500;">${brandObj ? brandObj.name : ''}</span>
+                                <span>Hãng sản xuất: </span><span>${brandObj ? brandObj.name : ''}</span>
                             </div>
                             <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                <span>Giá tiền: </span><span style="font-weight: 500;">${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
+                                <span>Giá tiền: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
                             </div>
                             <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                <span>Ngày mua: </span><span style="font-weight: 500;">${dateStr}</span>
+                                <span>Ngày mua: </span><span>${dateStr}</span>
                             </div>
                             <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                <span>Nơi mua: </span><span style="font-weight: 500;">${placeObj ? placeObj.name : (p.purchasePlace || '')}</span>
+                                <span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span>
                             </div>
                         </div>
 
                         <!-- Dòng chân trang (Phân loại) -->
-                        <div style="text-align: right; margin-top: auto; font-size: 11.5vh; padding-top: 1%;">
-                            <span>Phân loại: </span><span style="font-weight: 500;">${catObj ? catObj.name : ''}</span>
+                        <div style="text-align: right; margin-top: auto; font-size: 9.5pt;">
+                            <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
                         </div>
                     </div>
                 `;
 
                 const container = document.getElementById('labelPreviewContainer');
-                container.style.width = `${this.currentPrintWidth}mm`;
-                container.style.height = `${this.currentPrintHeight}mm`;
-                
-                // Đổ vào HTML Preview, nhưng để xem mượt mà trên trình duyệt, chữ 'vh' cần convert qua 'cqh' (Container Queries)
-                const previewHtml = this.currentPrintHtml.replace(/vh/g, 'cqh');
-                container.style.containerType = "size";
-                container.innerHTML = previewHtml;
+                container.innerHTML = this.currentPrintHtml;
+                container.style.width = 'fit-content';
+                container.style.margin = '0 auto';
 
                 this.closePrintSettings();
                 
@@ -1449,10 +1445,7 @@
                             }
                             body {
                                 margin: 0;
-                                width: ${this.currentPrintWidth}mm;
-                                height: ${this.currentPrintHeight}mm;
                                 padding: 0;
-                                box-sizing: border-box;
                             }
                             * {
                                 margin: 0;
