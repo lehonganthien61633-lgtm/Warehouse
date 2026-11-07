@@ -647,8 +647,7 @@
                     UI.showToast("Không thể khởi tạo CSDL", "error");
                 }
             }
-
-            listenToData() {
+listenToData() {
                 let dataLoaded = { products: false, categories: false, brands: false, locations: false, sealLocations: false };
                 
                 const checkAllLoaded = () => {
@@ -661,9 +660,11 @@
 
                 onValue(this.productsRef, (snapshot) => {
                     this.products = [];
-                    snapshot.forEach((child) => {
-                        this.products.push({ id: child.key, ...child.val() });
-                    });
+                    if (snapshot.exists()) {
+                        snapshot.forEach((child) => {
+                            this.products.push({ id: child.key, ...child.val() });
+                        });
+                    }
                     if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
                     
                     this.render();
@@ -672,7 +673,9 @@
 
                 onValue(this.categoriesRef, (snapshot) => {
                     this.categories = [];
-                    snapshot.forEach((child) => { this.categories.push({ id: child.key, ...child.val() }); });
+                    if (snapshot.exists()) {
+                        snapshot.forEach((child) => { this.categories.push({ id: child.key, ...child.val() }); });
+                    }
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.categories = true; checkAllLoaded();
@@ -680,7 +683,9 @@
 
                 onValue(this.brandsRef, (snapshot) => {
                     this.brands = [];
-                    snapshot.forEach((child) => { this.brands.push({ id: child.key, ...child.val() }); });
+                    if (snapshot.exists()) {
+                        snapshot.forEach((child) => { this.brands.push({ id: child.key, ...child.val() }); });
+                    }
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.brands = true; checkAllLoaded();
@@ -688,7 +693,9 @@
 
                 onValue(this.locationsRef, (snapshot) => {
                     this.locations = [];
-                    snapshot.forEach((child) => { this.locations.push({ id: child.key, ...child.val() }); });
+                    if (snapshot.exists()) {
+                        snapshot.forEach((child) => { this.locations.push({ id: child.key, ...child.val() }); });
+                    }
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.locations = true; checkAllLoaded();
@@ -696,7 +703,9 @@
 
                 onValue(this.sealLocationsRef, (snapshot) => {
                     this.sealLocations = [];
-                    snapshot.forEach((child) => { this.sealLocations.push({ id: child.key, ...child.val() }); });
+                    if (snapshot.exists()) {
+                        snapshot.forEach((child) => { this.sealLocations.push({ id: child.key, ...child.val() }); });
+                    }
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
                     dataLoaded.sealLocations = true; checkAllLoaded();
