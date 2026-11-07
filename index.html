@@ -332,8 +332,8 @@
                             <input type="text" id="productPurchasePlace" list="placesList" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Nhập hoặc chọn nơi mua...">
                             <datalist id="placesList"></datalist>
                             <label class="flex items-center gap-2 mt-2 text-sm text-gray-600 cursor-pointer">
-                                <input type="checkbox" id="saveNewPlaceCheckbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                                Lưu nơi mua này vào Thiết lập
+                                <input type="checkbox" id="productHasBox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                Sản phẩm có hộp đựng (Fullbox)
                             </label>
                         </div>
                         <div class="col-span-2">
@@ -605,6 +605,7 @@
                         if(oldProduct.color && !document.getElementById('productColor').value) document.getElementById('productColor').value = oldProduct.color;
                         if(oldProduct.price && !document.getElementById('productPrice').value) document.getElementById('productPrice').value = oldProduct.price;
                         if(oldProduct.purchasePlace && !document.getElementById('productPurchasePlace').value) document.getElementById('productPurchasePlace').value = oldProduct.purchasePlace;
+                        if(oldProduct.hasBox !== undefined && !document.getElementById('productHasBox').checked) document.getElementById('productHasBox').checked = oldProduct.hasBox;
                         
                         UI.showToast("Đã điền thông tin từ lần nhập trước.");
                     }
@@ -822,6 +823,7 @@
                         const qty = parseInt(p.quantity) || 1;
                         const catObj = this.categories.find(c => c.id === p.category);
                         const brandObj = this.brands.find(b => b.id === p.brand);
+                        const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                         
                         const catName = catObj ? catObj.name : '';
                         const brandUI = brandObj ? `<span class="text-xs text-purple-600 font-semibold inline-block bg-purple-50 px-2 py-0.5 rounded border border-purple-100 ml-2"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
@@ -833,7 +835,8 @@
                         let metaInfo = [];
                         if(p.model) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`);
                         if(p.color) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-palette"></i> ${p.color}</span>`);
-                        if(p.purchasePlace) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fa-solid fa-location-dot"></i> ${p.purchasePlace}</span>`);
+                        if(placeObj && placeObj.name) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fa-solid fa-location-dot"></i> ${placeObj.name}</span>`);
+                        if(p.hasBox) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100"><i class="fa-solid fa-box-open"></i> Có hộp</span>`);
                         
                         const metaUI = metaInfo.length > 0 ? `<div class="text-[11px] mt-2 flex flex-wrap gap-2">${metaInfo.join('')}</div>` : '';
                         const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1">S/N: ${p.serial}</div>` : '';
@@ -879,7 +882,7 @@
                 qInput.value = '';
 
                 document.getElementById('productPurchasePlace').value = '';
-                document.getElementById('saveNewPlaceCheckbox').checked = false;
+                document.getElementById('productHasBox').checked = false;
 
                 if (id) {
                     document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
@@ -898,6 +901,7 @@
                         document.getElementById('productPrice').value = p.price || 0;
                         document.getElementById('productPurchaseDate').value = p.purchaseDate || '';
                         document.getElementById('productPurchasePlace').value = p.purchasePlace || '';
+                        document.getElementById('productHasBox').checked = p.hasBox === true;
                         
                         const isTracked = p.trackQuantity !== false;
                         tQCheckbox.checked = isTracked;
@@ -949,9 +953,9 @@
                 }
 
                 const purchasePlace = document.getElementById('productPurchasePlace').value.trim();
-                const isSavePlace = document.getElementById('saveNewPlaceCheckbox').checked;
+                const hasBox = document.getElementById('productHasBox').checked;
 
-                if (isSavePlace && purchasePlace) {
+                if (purchasePlace) {
                     const safeKey = this.cleanKey(purchasePlace);
                     if (!this.locations.some(l => l.id === safeKey)) {
                         await set(ref(this.db, 'locations/' + safeKey), { name: purchasePlace, id: safeKey });
@@ -973,6 +977,7 @@
                     price: parseFloat(document.getElementById('productPrice').value),
                     purchaseDate: document.getElementById('productPurchaseDate').value,
                     purchasePlace: purchasePlace,
+                    hasBox: hasBox,
                     trackQuantity,
                     quantity: finalQty,
                     updatedAt: new Date().toISOString()
@@ -1252,3 +1257,4 @@
     </script>
 </body>
 </html>
+Ví dụ: sửa mục Đã Xóa 2 ở nhánh Nơi mua thành Thế Giới Di Động thì nó biến thành Thế Giới Di Động nhưng nhánh Hãng Sản xuất mục Đã Xóa 2 (Có tên giống hệt nhưng là Hãng Sản Xuất) cũng bị biến thành Thế Giới Di Động, nếu khác tên thì mục Thế Giới Di Động sẽ tự động tạo ở 3 nhánh. Thay đổi cách thức lưu của mục Thiết lập giúp tôi
