@@ -578,6 +578,7 @@
                 this.categories = [];
                 this.brands = [];
                 this.locations = []; 
+                this.sealLocations = [];
                 this.searchQuery = '';
                 this.currentView = 'dashboard';
                 
@@ -586,6 +587,7 @@
                 this.categoriesRef = null;
                 this.brandsRef = null;
                 this.locationsRef = null;
+                this.sealLocationsRef = null;
                 
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
@@ -602,34 +604,7 @@
             }
 
             async initApp() {
-                try {
-                    const firebaseConfig = { databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/" };
-                    const app = initializeApp(firebaseConfig);
-                    this.db = getDatabase(app);
-                    
-                    this.productsRef = ref(this.db, 'products');
-                    this.categoriesRef = ref(this.db, 'categories');
-                    this.brandsRef = ref(this.db, 'brands');
-                    this.locationsRef = ref(this.db, 'locations');
-                this.sealLocationsRef = ref(this.db, 'sealLocations');
-                
-                this.deleteCandidateId = null;
-                this.deleteCandidateType = null;
-
-                // Các biến lưu trạng thái in
-                this.currentPrintId = null;
-                this.currentPrintWidth = 50;
-                this.currentPrintHeight = 30;
-                this.currentPrintIsBox = false;
-                this.currentPrintHtml = '';
-                this.sealLocations = [];
-                
-                this.initApp();
-                this.bindEvents();
-            }
-
-            async initApp() {
-                // Thêm timeout an toàn 5 giây để luôn mở UI dù Firebase chậm/lỗi
+                // Timeout an toàn 5s phòng khi mạng chậm hoặc bảng chưa tạo
                 setTimeout(() => {
                     const loadingScreen = document.getElementById('loading-screen');
                     if (loadingScreen && loadingScreen.style.display !== 'none') {
@@ -637,7 +612,9 @@
                         const appContainer = document.getElementById('app-container');
                         appContainer.style.display = 'flex';
                         appContainer.classList.remove('hidden');
-                        UI.showToast("Bỏ qua đồng bộ do quá trình tải mất quá nhiều thời gian.", "info");
+                        if (this.products.length === 0) {
+                            UI.showToast("Đã tải xong hoặc dữ liệu trống.", "info");
+                        }
                     }
                 }, 5000);
 
@@ -664,7 +641,7 @@
                 let dataLoaded = { products: false, categories: false, brands: false, locations: false, sealLocations: false };
                 
                 const checkAllLoaded = () => {
-                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands && dataLoaded.locations && dataLoaded.sealLocations) {
+                    if (Object.values(dataLoaded).every(status => status === true)) {
                         const loadingScreen = document.getElementById('loading-screen');
                         if (loadingScreen.style.display !== 'none') {
                             loadingScreen.style.display = 'none';
@@ -673,58 +650,60 @@
                             appContainer.classList.remove('hidden');
                         }
                     }
-                }
+                };
 
-                // Cập nhật cách xử lý khi onValue được gọi
-                const handleSnapshot = (snapshot, targetArray, idField = true) => {
-                    const temp = [];
+                const parseSnapshot = (snapshot) => {
+                    const result = [];
                     if (snapshot.exists()) {
                         snapshot.forEach((child) => {
-                            if (idField) {
-                                temp.push({ id: child.key, ...child.val() });
-                            } else {
-                                temp.push(child.val());
-                            }
+                            result.push({ id: child.key, ...child.val() });
                         });
                     }
-                    return temp;
+                    return result;
                 };
 
                 onValue(this.productsRef, (snapshot) => {
-                    this.products = handleSnapshot(snapshot, this.products);
-                    if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
+                    this.products = parseSnapshot(snapshot);
+                    const tableLoading = document.getElementById('tableLoading');
+                    if(tableLoading) tableLoading.classList.add('hidden');
                     this.render();
-                    dataLoaded.products = true; checkAllLoaded();
+                    dataLoaded.products = true; 
+                    checkAllLoaded();
                 });
 
                 onValue(this.categoriesRef, (snapshot) => {
-                    this.categories = handleSnapshot(snapshot, this.categories);
+                    this.categories = parseSnapshot(snapshot);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    dataLoaded.categories = true; checkAllLoaded();
+                    dataLoaded.categories = true; 
+                    checkAllLoaded();
                 });
 
                 onValue(this.brandsRef, (snapshot) => {
-                    this.brands = handleSnapshot(snapshot, this.brands);
+                    this.brands = parseSnapshot(snapshot);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    dataLoaded.brands = true; checkAllLoaded();
+                    dataLoaded.brands = true; 
+                    checkAllLoaded();
                 });
 
                 onValue(this.locationsRef, (snapshot) => {
-                    this.locations = handleSnapshot(snapshot, this.locations);
+                    this.locations = parseSnapshot(snapshot);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    dataLoaded.locations = true; checkAllLoaded();
+                    dataLoaded.locations = true; 
+                    checkAllLoaded();
                 });
 
                 onValue(this.sealLocationsRef, (snapshot) => {
-                    this.sealLocations = handleSnapshot(snapshot, this.sealLocations);
+                    this.sealLocations = parseSnapshot(snapshot);
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    dataLoaded.sealLocations = true; checkAllLoaded();
+                    dataLoaded.sealLocations = true; 
+                    checkAllLoaded();
                 });
             }
+
             bindEvents() {
                 document.getElementById('mobileMenuBtn').addEventListener('click', () => {
                     document.getElementById('sidebarNav').classList.toggle('hidden');
@@ -828,10 +807,12 @@
                 });
                 brandSelect.value = currentBrand || '';
 
-                placeList.innerHTML = '';
-                this.locations.forEach(l => {
-                    if(l.name) placeList.innerHTML += `<option value="${l.name}"></option>`;
-                });
+                if (placeList) {
+                    placeList.innerHTML = '';
+                    this.locations.forEach(l => {
+                        if(l.name) placeList.innerHTML += `<option value="${l.name}"></option>`;
+                    });
+                }
 
                 if(sealList) {
                     sealList.innerHTML = '';
@@ -878,51 +859,57 @@
                 const locTbody = document.getElementById('locationsTableBody');
                 const sealTbody = document.getElementById('sealLocationsTableBody');
                 
-                catTbody.innerHTML = '';
-                this.categories.forEach(c => {
-                    if(!c.name) return;
-                    catTbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b border-gray-100">
-                            <td class="px-6 py-3 font-semibold text-gray-800">${c.prefix}</td>
-                            <td class="px-6 py-3 text-gray-700">${c.name}</td>
-                            <td class="px-6 py-3 text-right">
-                                <div class="flex justify-end gap-2">
-                                    <button onclick="app.openConfigModal('category', '${c.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
-                                    <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
-                                </div>
-                            </td>
-                        </tr>`;
-                });
+                if (catTbody) {
+                    catTbody.innerHTML = '';
+                    this.categories.forEach(c => {
+                        if(!c.name) return;
+                        catTbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 font-semibold text-gray-800">${c.prefix}</td>
+                                <td class="px-6 py-3 text-gray-700">${c.name}</td>
+                                <td class="px-6 py-3 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="app.openConfigModal('category', '${c.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                    });
+                }
 
-                brandTbody.innerHTML = '';
-                this.brands.forEach(b => {
-                    if(!b.name) return;
-                    brandTbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b border-gray-100">
-                            <td class="px-6 py-3 text-gray-700">${b.name}</td>
-                            <td class="px-6 py-3 text-right">
-                                <div class="flex justify-end gap-2">
-                                    <button onclick="app.openConfigModal('brand', '${b.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
-                                    <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
-                                </div>
-                            </td>
-                        </tr>`;
-                });
+                if (brandTbody) {
+                    brandTbody.innerHTML = '';
+                    this.brands.forEach(b => {
+                        if(!b.name) return;
+                        brandTbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 text-gray-700">${b.name}</td>
+                                <td class="px-6 py-3 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="app.openConfigModal('brand', '${b.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                    });
+                }
 
-                locTbody.innerHTML = '';
-                this.locations.forEach(l => {
-                    if(!l.name) return;
-                    locTbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b border-gray-100">
-                            <td class="px-6 py-3 text-gray-700">${l.name}</td>
-                            <td class="px-6 py-3 text-right">
-                                <div class="flex justify-end gap-2">
-                                    <button onclick="app.openConfigModal('location', '${l.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
-                                    <button onclick="app.requestDelete('${l.id}', 'location')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
-                                </div>
-                            </td>
-                        </tr>`;
-                });
+                if (locTbody) {
+                    locTbody.innerHTML = '';
+                    this.locations.forEach(l => {
+                        if(!l.name) return;
+                        locTbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 text-gray-700">${l.name}</td>
+                                <td class="px-6 py-3 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="app.openConfigModal('location', '${l.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${l.id}', 'location')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                    });
+                }
 
                 if(sealTbody) {
                     sealTbody.innerHTML = '';
@@ -943,10 +930,11 @@
             }
 
             renderDashboard() {
-                // (Giữ nguyên logic của renderDashboard như cũ)
                 let totalItems = 0; let totalValue = 0;
                 const tbody = document.getElementById('dashboardTableBody');
                 const emptyState = document.getElementById('dashboardEmpty');
+                
+                if (!tbody) return;
                 tbody.innerHTML = '';
 
                 if (this.products.length === 0) {
@@ -982,14 +970,14 @@
             }
 
             renderProducts() {
-                // (Giữ nguyên logic của renderProducts như cũ)
                 const tbody = document.getElementById('productsTableBody');
                 const emptyState = document.getElementById('tableEmpty');
+                if (!tbody) return;
                 tbody.innerHTML = '';
 
                 const filtered = this.products.filter(p => p.name && (p.name.toLowerCase().includes(this.searchQuery) || (p.code || '').toLowerCase().includes(this.searchQuery) || (p.serial || '').toLowerCase().includes(this.searchQuery) || (p.sku || '').includes(this.searchQuery)));
 
-                if (filtered.length === 0 && !document.getElementById('tableLoading').classList.contains('hidden') === false) {
+                if (filtered.length === 0) {
                     emptyState.classList.remove('hidden');
                     tbody.parentElement.classList.add('hidden');
                 } else {
@@ -1047,7 +1035,6 @@
             }
 
             openModal(id = null) {
-                // (Giữ nguyên logic của openModal)
                 document.getElementById('productForm').reset();
                 document.getElementById('productId').value = '';
                 document.getElementById('productOldCode').value = '';
@@ -1103,7 +1090,6 @@
             }
 
             async handleSaveProduct() {
-                // (Giữ nguyên logic của handleSaveProduct)
                 const form = document.getElementById('productForm');
                 if(!form.checkValidity()) { form.reportValidity(); return; }
 
@@ -1351,6 +1337,7 @@
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
             }
+
             triggerQuickAdjust() {
                 const val = document.getElementById('quickAdjustInput').value.trim();
                 if (!val) {
