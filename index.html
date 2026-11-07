@@ -1351,23 +1351,23 @@
                 }
 // Cấu trúc HTML dùng Flexbox co giãn chữ (cấu hình responsive mm)
                 this.currentPrintHtml = `
-                    <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1.5mm 2mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1;">
+                    <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
                         
                         <!-- Header có logo -->
-                        <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm;">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="height: 4mm; width: 4mm; flex-shrink: 0; margin-right: 1.5mm;">
+                        <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm; justify-content: flex-start;">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="height: 3.5mm; width: 3.5mm; flex-shrink: 0; margin-right: 1mm;">
                                 <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
                             </svg>
-                            <div style="font-size: 7.5pt; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
+                            <div style="font-size: 7pt; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
                         </div>
                         
                         <!-- Tiêu đề Thông tin -->
-                        <div style="font-size: 7pt; font-weight: bold; margin-bottom: 0.8mm;">
+                        <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
                             Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                         </div>
                         
                         <!-- Các dòng thông tin dùng lưới linh hoạt -->
-                        <div style="font-size: 6.5pt; display: flex; flex-direction: column; gap: 0.5mm; flex-grow: 1; word-break: break-word;">
+                        <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal;">
                             <div>
                                 <span>Tên sản phẩm: </span><span>${p.name || ''}</span>
                             </div>
@@ -1386,7 +1386,7 @@
                         </div>
 
                         <!-- Dòng chân trang (Phân loại) -->
-                        <div style="text-align: right; margin-top: auto; font-size: 6.5pt; font-weight: bold; word-break: break-word;">
+                        <div style="text-align: left; margin-top: auto; font-size: 6pt; font-weight: bold; border-top: 1px dashed #000; padding-top: 0.5mm;">
                             <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
                         </div>
                     </div>
