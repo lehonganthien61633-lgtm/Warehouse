@@ -4,16 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống Quản lý kho WMS</title>
-    
-    <!-- CSS Tailwind & FontAwesome -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Thư viện cho chức năng In QR & Quét Camera -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .toast-enter { transform: translateX(100%); opacity: 0; }
@@ -22,22 +16,9 @@
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Vá lỗi cho một số class Tailwind v3 không có trong bản v2 */
-        .text-\[11px\] { font-size: 11px; }
-        .z-\[60\] { z-index: 60; }
-        .z-\[70\] { z-index: 70; }
-        .z-\[80\] { z-index: 80; }
-        .z-\[85\] { z-index: 85; }
-        .z-\[90\] { z-index: 90; }
-        .z-\[95\] { z-index: 95; }
-        .z-\[100\] { z-index: 100; }
-        .min-h-\[300px\] { min-height: 300px; }
-        .min-w-\[300px\] { min-width: 300px; }
-        .min-w-\[120px\] { min-width: 120px; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex">
+<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
 
     <!-- VIEW: LOADING -->
     <div id="loading-screen" class="w-full h-full flex flex-col items-center justify-center bg-slate-800 px-4 z-[100] fixed inset-0">
@@ -46,57 +27,53 @@
     </div>
 
     <!-- MAIN APP WRAPPER -->
-    <div id="app-container" class="h-full w-full flex flex-col md:flex-row hidden">
-        
-        <!-- SIDEBAR -->
-        <aside class="bg-white border-r border-gray-200 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col transition-all duration-300 z-20 shadow-sm">
-            <div class="p-5 flex items-center justify-between md:justify-center border-b border-gray-100">
-                <h1 class="text-xl font-bold flex items-center gap-2 text-gray-800">
-                    <i class="fa-solid fa-boxes-stacked text-blue-500"></i>
+    <div id="app-container" class="h-full flex-col md:flex-row w-full hidden">
+        <!-- Sidebar -->
+        <aside class="bg-slate-800 text-white w-full md:w-64 flex-shrink-0 md:h-full flex flex-col transition-all duration-300 z-20">
+            <div class="p-4 flex items-center justify-between md:justify-center border-b border-slate-700">
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked text-blue-400"></i>
                     <span class="tracking-wide">Kho Hàng Pro</span>
                 </h1>
-                <button id="mobileMenuBtn" class="md:hidden text-gray-500 hover:text-gray-800">
+                <button id="mobileMenuBtn" class="md:hidden text-gray-300 hover:text-white">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
             </div>
-            
             <nav id="sidebarNav" class="hidden md:flex flex-col flex-1 p-4 gap-2">
                 <button onclick="app.switchView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600 text-white transition-colors">
                     <i class="fa-solid fa-chart-pie w-5 text-center"></i>
                     <span class="font-medium">Bảng điều khiển</span>
                 </button>
-                <button onclick="app.switchView('products')" id="nav-products" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <button onclick="app.switchView('products')" id="nav-products" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
                     <i class="fa-solid fa-box w-5 text-center"></i>
                     <span class="font-medium">Quản lý sản phẩm</span>
                 </button>
-                <button onclick="app.switchView('categories')" id="nav-categories" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <button onclick="app.switchView('categories')" id="nav-categories" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
                     <i class="fa-solid fa-gear w-5 text-center"></i>
                     <span class="font-medium">Thiết lập</span>
                 </button>
             </nav>
-            
-            <div class="p-4 text-xs border-t border-gray-100 hidden md:block text-center text-gray-400">
+            <div class="p-4 text-xs border-t border-slate-700 hidden md:block text-center text-gray-400">
                 <i class="fa-solid fa-globe"></i> Hệ thống dùng chung
             </div>
         </aside>
 
-        <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 h-full overflow-y-auto no-scrollbar relative bg-gray-50">
-            <header class="bg-white shadow-sm sticky top-0 z-10 px-8 py-5 flex justify-between items-center border-b border-gray-100">
+        <!-- Main Content -->
+        <main class="flex-1 h-full overflow-y-auto no-scrollbar relative">
+            <header class="bg-white shadow-sm sticky top-0 z-10 px-6 py-4 flex justify-between items-center">
                 <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">Bảng điều khiển</h2>
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.reload()" class="md:hidden text-gray-400 hover:text-blue-500 mr-2"><i class="fa-solid fa-rotate-right text-xl"></i></button>
-                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100" title="Cơ sở dữ liệu công khai">
+                    <button onclick="window.location.reload()" class="md:hidden text-gray-500 hover:text-blue-500 mr-2"><i class="fa-solid fa-rotate-right text-xl"></i></button>
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold" title="Cơ sở dữ liệu công khai">
                         <i class="fa-solid fa-users"></i>
                     </div>
                 </div>
             </header>
 
-            <div class="p-8 max-w-7xl mx-auto">
+            <div class="p-6 max-w-7xl mx-auto">
                 
                 <!-- VIEW: DASHBOARD -->
                 <div id="view-dashboard" class="space-y-6">
-                    <!-- Cards Thống kê -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-blue-500 flex items-center">
                             <div class="p-3 rounded-full bg-blue-50 text-blue-500 mr-4"><i class="fa-solid fa-cubes text-2xl"></i></div>
@@ -122,17 +99,12 @@
                     </div>
 
                     <!-- Quét nhanh điều chỉnh tồn kho -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div>
-                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng</h3>
-                            <p class="text-sm text-gray-500 mt-1">Nhập Serial / SKU / Mã SP để xuất hoặc nhập kho.</p>
-                        </div>
-                        <div class="w-full sm:w-auto flex gap-2">
+                    <div class="w-full sm:w-auto flex gap-2">
                             <input type="text" id="quickAdjustInput" class="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Nhập Serial / SKU / Mã SP...">
-                            <button onclick="app.openScanner()" class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-200 transition-colors shadow-sm flex items-center justify-center" title="Quét bằng Camera">
-                                <i class="fa-solid fa-qrcode text-lg mr-2"></i> Quét QR
+                            <button onclick="app.openScanner()" class="px-3 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-200 transition-colors shadow-sm flex items-center justify-center" title="Quét bằng Camera">
+                                <i class="fa-solid fa-qrcode text-lg"></i>
                             </button>
-                            <button onclick="app.triggerQuickAdjust()" class="px-6 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap">
+                            <button onclick="app.triggerQuickAdjust()" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap">
                                 Tìm kiếm
                             </button>
                         </div>
@@ -144,7 +116,6 @@
                         <ul id="quickActionList" class="text-sm text-gray-600 space-y-1 max-h-32 overflow-y-auto no-scrollbar"></ul>
                     </div>
 
-                    <!-- Danh sách mặt hàng Dashboard -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[500px]">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
                             <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-list text-blue-500"></i> Danh sách mặt hàng</h3>
@@ -168,8 +139,8 @@
                             </div>
                         </div>
                         
-                        <!-- Nút Thêm sản phẩm -->
-                        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-center shrink-0">
+                        <!-- Nút Thêm sản phẩm ở cuối danh sách Bảng điều khiển -->
+                        <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-center shrink-0">
                             <button onclick="app.openModal()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto">
                                 <i class="fa-solid fa-plus"></i> Thêm sản phẩm mới
                             </button>
@@ -178,13 +149,13 @@
                 </div>
 
                 <!-- VIEW: PRODUCTS -->
-                <div id="view-products" class="hidden space-y-6">
+                <div id="view-products" class="hidden space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <div class="relative w-full sm:w-96">
-                            <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" id="searchInput" placeholder="Tìm kiếm Tên, Mã, SKU, Serial..." class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="searchInput" placeholder="Tìm kiếm Tên, Mã, SKU, Serial..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow">
                         </div>
-                        <button onclick="app.openModal()" class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
+                        <button onclick="app.openModal()" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
                             <i class="fa-solid fa-plus"></i> Thêm sản phẩm
                         </button>
                     </div>
@@ -194,12 +165,12 @@
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
-                                        <th class="px-6 py-4 font-medium whitespace-nowrap">Mã SP</th>
-                                        <th class="px-6 py-4 font-medium whitespace-nowrap">Phân loại</th>
+                                        <th class="px-6 py-4 font-medium">Mã SP</th>
+                                        <th class="px-6 py-4 font-medium">Phân loại</th>
                                         <th class="px-6 py-4 font-medium min-w-[300px]">Tên sản phẩm</th>
-                                        <th class="px-6 py-4 font-medium text-right whitespace-nowrap">Số lượng</th>
+                                        <th class="px-6 py-4 font-medium text-right">Số lượng</th>
                                         <th class="px-6 py-4 font-medium text-right min-w-[120px]">Đơn giá</th>
-                                        <th class="px-6 py-4 font-medium text-right w-36 whitespace-nowrap">Thao tác</th>
+                                        <th class="px-6 py-4 font-medium text-right w-36">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="productsTableBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
@@ -213,20 +184,20 @@
                             <div id="tableEmpty" class="hidden p-12 text-center text-gray-500">
                                 <i class="fa-solid fa-box-open text-5xl text-gray-300 mb-4"></i>
                                 <p class="text-lg font-medium">Không tìm thấy sản phẩm nào</p>
-                                <p class="text-sm mt-1 text-gray-400">Hãy thêm sản phẩm mới vào kho của bạn.</p>
+                                <p class="text-sm mt-1">Hãy thêm sản phẩm mới vào kho của bạn.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- VIEW: CONFIGURATION -->
+                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands, Locations, Seal Locations) -->
                 <div id="view-categories" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                         
                         <!-- Categories Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                                <h3 class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-layer-group text-blue-500 w-6"></i> Phân loại</h3>
+                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-layer-group text-blue-500 mr-2"></i> Phân loại</h3>
                                 <button onclick="app.openConfigModal('category')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
                             </div>
                             <div class="overflow-y-auto max-h-96">
@@ -246,7 +217,7 @@
                         <!-- Brands Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                                <h3 class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-industry text-purple-500 w-6"></i> Hãng SX</h3>
+                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-industry text-purple-500 mr-2"></i> Hãng sản xuất</h3>
                                 <button onclick="app.openConfigModal('brand')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
                             </div>
                             <div class="overflow-y-auto max-h-96">
@@ -265,7 +236,7 @@
                         <!-- Locations Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                                <h3 class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-location-dot text-emerald-500 w-6"></i> Nơi mua</h3>
+                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-location-dot text-emerald-500 mr-2"></i> Nơi mua</h3>
                                 <button onclick="app.openConfigModal('location')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
                             </div>
                             <div class="overflow-y-auto max-h-96">
@@ -284,14 +255,14 @@
                         <!-- Seal Locations Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                                <h3 class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-shield-halved text-orange-500 w-6"></i> Niêm phong</h3>
+                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-shield-halved text-orange-500 mr-2"></i> VT Niêm phong</h3>
                                 <button onclick="app.openConfigModal('sealLocation')" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
                             </div>
                             <div class="overflow-y-auto max-h-96">
                                 <table class="w-full text-left border-collapse">
                                     <thead class="bg-white sticky top-0 shadow-sm z-10">
                                         <tr class="text-gray-500 text-sm border-b border-gray-100">
-                                            <th class="px-6 py-3 font-medium">Vị trí dán tem</th>
+                                            <th class="px-6 py-3 font-medium">Vị trí</th>
                                             <th class="px-6 py-3 font-medium text-right w-24">Thao tác</th>
                                         </tr>
                                     </thead>
@@ -308,11 +279,11 @@
     </div> <!-- END APP WRAPPER -->
 
     <!-- Modal: Thêm/Sửa Sản phẩm -->
-    <div id="productModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 overflow-y-auto p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 relative flex flex-col max-h-[90vh]" id="productModalContent">
+    <div id="productModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 overflow-y-auto p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300 relative flex flex-col max-h-[90vh]" id="productModalContent">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl sticky top-0 z-10 flex-shrink-0">
                 <h3 class="font-bold text-lg text-gray-800" id="modalTitle">Thêm Sản Phẩm Mới</h3>
-                <button type="button" onclick="app.closeModal()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+                <button type="button" onclick="app.closeModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
@@ -328,19 +299,19 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (S/N)</label>
-                            <input type="text" id="productSerial" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono tracking-wide transition-shadow" placeholder="S/N...">
+                            <input type="text" id="productSerial" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono tracking-wide" placeholder="S/N...">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Tên Sản Phẩm *</label>
-                        <input type="text" id="productName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="Nhập tên sản phẩm...">
+                        <input type="text" id="productName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên sản phẩm...">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Phân Loại *</label>
-                            <select id="productCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm transition-shadow">
+                            <select id="productCategory" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
                                 <option value="" disabled selected>Chọn...</option>
                             </select>
                         </div>
@@ -353,70 +324,70 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Hãng Sản Xuất</label>
-                            <select id="productBrand" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm transition-shadow">
+                            <select id="productBrand" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
                                 <option value="">Chọn...</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                            <input type="text" id="productModel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow" placeholder="VD: XYZ">
+                            <input type="text" id="productModel" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="VD: XYZ">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Đơn Giá (VNĐ) *</label>
-                            <input type="number" id="productPrice" min="0" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow" placeholder="0">
+                            <input type="number" id="productPrice" min="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="0">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Màu sắc</label>
-                            <input type="text" id="productColor" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow" placeholder="Đen, Trắng...">
+                            <input type="text" id="productColor" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Đen, Trắng...">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nơi mua</label>
-                            <input type="text" id="productPurchasePlace" list="placesList" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow" placeholder="Nhập hoặc chọn nơi mua...">
+                            <input type="text" id="productPurchasePlace" list="placesList" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Nhập hoặc chọn nơi mua...">
                             <datalist id="placesList"></datalist>
-                            <label class="flex items-center gap-2 mt-3 text-sm text-gray-700 cursor-pointer w-max hover:text-blue-600 transition-colors">
-                                <input type="checkbox" id="productHasBox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                            <label class="flex items-center gap-2 mt-2 text-sm text-gray-600 cursor-pointer">
+                                <input type="checkbox" id="productHasBox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
                                 Sản phẩm có hộp đựng (Fullbox)
                             </label>
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mua</label>
-                            <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-shadow">
+                            <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         </div>
                     </div>
 
-                    <div class="border border-blue-100 p-5 rounded-lg bg-blue-50 mt-4 shadow-sm">
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="text-sm font-bold text-blue-800">Quản lý tồn kho (Số lượng)</label>
+                    <div class="border border-gray-200 p-4 rounded-lg bg-gray-50 mt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-sm font-medium text-gray-700">Quản lý tồn kho (Số lượng)</label>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="toggleQuantity" class="sr-only peer" checked>
                                 <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
-                        <input type="number" id="productQuantity" min="1" class="w-full px-4 py-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:border-gray-200 text-center font-bold text-xl shadow-sm transition-all" placeholder="1">
+                        <input type="number" id="productQuantity" min="1" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-400 text-center font-bold text-lg" placeholder="1">
                     </div>
                 </form>
             </div>
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-end gap-3 flex-shrink-0">
-                <button type="button" onclick="app.closeModal()" class="px-5 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors shadow-sm">Hủy</button>
-                <button type="button" id="saveBtn" onclick="app.handleSaveProduct()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-save"></i> Lưu Sản Phẩm
+            <div class="px-6 py-4 border-t border-gray-100 bg-white rounded-b-xl flex justify-end gap-3 flex-shrink-0">
+                <button type="button" onclick="app.closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
+                <button type="button" id="saveBtn" onclick="app.handleSaveProduct()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-save"></i> Lưu
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Thiết lập chung (Thêm/Sửa Phân loại / Hãng / Nơi mua) -->
-    <div id="configModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="configModalContent">
+    <div id="configModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="configModalContent">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
                 <h3 class="font-bold text-lg text-gray-800" id="configModalTitle">Thêm mới</h3>
-                <button type="button" onclick="app.closeConfigModal()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+                <button type="button" onclick="app.closeConfigModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
@@ -427,18 +398,18 @@
                 
                 <div id="configPrefixContainer" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mã viết tắt (2 KT tự động)</label>
-                    <input type="text" id="configPrefix" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 uppercase font-bold cursor-not-allowed text-center">
+                    <input type="text" id="configPrefix" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 uppercase font-bold cursor-not-allowed">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tên hiển thị *</label>
-                    <input type="text" id="configName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" placeholder="Nhập tên...">
+                    <input type="text" id="configName" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên...">
                 </div>
 
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
-                    <button type="button" onclick="app.closeConfigModal()" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors shadow-sm">Hủy</button>
-                    <button type="button" onclick="app.handleSaveConfig()" id="configSaveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
-                        Lưu Thay Đổi
+                    <button type="button" onclick="app.closeConfigModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
+                    <button type="button" onclick="app.handleSaveConfig()" id="configSaveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                        Lưu
                     </button>
                 </div>
             </form>
@@ -446,172 +417,145 @@
     </div>
 
     <!-- Modal: Xác nhận Xóa -->
-    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6 relative overflow-hidden" id="confirmModalContent">
-            <div class="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
-            <div class="w-16 h-16 rounded-full bg-red-50 text-red-500 border-4 border-red-100 flex items-center justify-center mx-auto mb-4 mt-2">
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6" id="confirmModalContent">
+            <div class="w-16 h-16 rounded-full bg-red-100 text-red-500 flex items-center justify-center mx-auto mb-4">
                 <i class="fa-solid fa-trash-can text-2xl"></i>
             </div>
             <h3 class="font-bold text-xl text-gray-800 mb-2">Xác nhận xóa?</h3>
-            <p class="text-gray-500 mb-6 text-sm px-2">Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa mục này khỏi hệ thống?</p>
+            <p class="text-gray-500 mb-6 text-sm">Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa mục này khỏi hệ thống?</p>
             <div class="flex justify-center gap-3">
-                <button type="button" onclick="app.closeConfirmModal()" class="px-5 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors w-full shadow-sm">Hủy</button>
-                <button type="button" id="confirmDeleteBtn" onclick="app.executeDelete()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors w-full shadow-sm">Xóa vĩnh viễn</button>
+                <button type="button" onclick="app.closeConfirmModal()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy</button>
+                <button type="button" id="confirmDeleteBtn" onclick="app.executeDelete()" class="px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors w-full">Xóa</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Cập nhật Số lượng Nhanh -->
-    <div id="quickAdjustModal" class="fixed inset-0 bg-black/50 z-[85] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6 border-t-4 border-blue-500" id="quickAdjustContent">
-            <h3 class="font-bold text-xl text-blue-800 mb-1" id="quickAdjustTitle">Mã SP</h3>
-            <p class="text-gray-600 mb-6 text-sm font-medium" id="quickAdjustName">Tên SP</p>
+    <div id="quickAdjustModal" class="fixed inset-0 bg-black/50 z-[85] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 text-center p-6" id="quickAdjustContent">
+            <h3 class="font-bold text-xl text-gray-800 mb-1" id="quickAdjustTitle">Mã SP</h3>
+            <p class="text-gray-500 mb-6 text-sm" id="quickAdjustName">Tên SP</p>
             
             <input type="hidden" id="quickAdjustId">
             <input type="hidden" id="quickAdjustCurrentQty">
             
-            <div class="flex items-center justify-center gap-4 mb-8">
-                <button onclick="app.submitQuickAdjust(-1)" class="w-14 h-14 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white flex items-center justify-center text-xl font-bold transition-all shadow-sm">
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <button onclick="app.submitQuickAdjust(-1)" class="w-12 h-12 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xl font-bold transition-colors">
                     <i class="fa-solid fa-minus"></i>
                 </button>
-                <input type="number" id="quickAdjustAmount" value="1" min="1" class="w-24 text-center px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-bold text-gray-800 shadow-inner">
-                <button onclick="app.submitQuickAdjust(1)" class="w-14 h-14 rounded-full bg-green-50 text-green-600 border border-green-200 hover:bg-green-600 hover:text-white flex items-center justify-center text-xl font-bold transition-all shadow-sm">
+                <input type="number" id="quickAdjustAmount" value="1" min="1" class="w-24 text-center px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-bold">
+                <button onclick="app.submitQuickAdjust(1)" class="w-12 h-12 rounded-full bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center text-xl font-bold transition-colors">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
             
-            <button onclick="app.closeQuickAdjust()" class="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Thoát</button>
+            <button onclick="app.closeQuickAdjust()" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Hủy & Đóng</button>
         </div>
     </div>
 
     <!-- Modal: Cài đặt In Nhãn -->
-    <div id="printSettingsModal" class="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 relative flex flex-col" id="printSettingsContent">
+    <div id="printSettingsModal" class="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 relative flex flex-col" id="printSettingsContent">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fa-solid fa-print text-gray-500"></i> Cài đặt In Nhãn</h3>
-                <button type="button" onclick="app.closePrintSettings()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+                <h3 class="font-bold text-lg text-gray-800">Cài đặt In Nhãn</h3>
+                <button type="button" onclick="app.closePrintSettings()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
-            <div class="p-6 space-y-5 text-left">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Loại nhãn in</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer bg-blue-50 px-3 py-2 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
-                            <input type="radio" name="printType" value="info" checked onchange="app.togglePrintType()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
-                            <span class="text-sm font-semibold text-blue-800">Thông tin SP</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer bg-orange-50 px-3 py-2 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors">
-                            <input type="radio" name="printType" value="seal" onchange="app.togglePrintType()" class="w-4 h-4 text-orange-600 focus:ring-orange-500 border-gray-300 cursor-pointer">
-                            <span class="text-sm font-semibold text-orange-800">Niêm phong</span>
-                        </label>
-                    </div>
+            <div class="p-6 space-y-4 text-left">
+                <label class="block text-sm font-medium text-gray-700">Loại nhãn in</label>
+                <div class="flex gap-4 mb-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printType" value="info" checked onchange="app.togglePrintType()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                        <span class="text-sm font-medium">Thông tin SP</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printType" value="seal" onchange="app.togglePrintType()" class="w-4 h-4 text-orange-600 focus:ring-orange-500 border-gray-300">
+                        <span class="text-sm font-medium">Niêm phong</span>
+                    </label>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Kích thước tem (Giấy in nhiệt)</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="printSize" value="40x30" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
-                            <span class="text-sm font-medium text-gray-700">40x30 mm</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="printSize" value="50x30" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
-                            <span class="text-sm font-medium text-gray-700">50x30 mm</span>
-                        </label>
-                    </div>
+                <label class="block text-sm font-medium text-gray-700 pt-2 border-t border-gray-100">Kích thước giấy in</label>
+                <div class="flex gap-4 mb-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printSize" value="40x30" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                        <span class="text-sm font-medium">40x30 mm</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printSize" value="50x30" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                        <span class="text-sm font-medium">50x30 mm</span>
+                    </label>
                 </div>
                 
                 <!-- Cấu hình Nhãn Thông tin -->
-                <div id="printInfoConfig" class="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer font-medium hover:text-blue-600 transition-colors w-max">
-                        <input type="checkbox" id="printBoxLabel" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
-                        Đánh dấu in cho Vỏ Hộp
+                <div id="printInfoConfig">
+                    <label class="flex items-center gap-2 mt-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="printBoxLabel" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        In nhãn cho vỏ hộp (Hiển thị "Vỏ hộp")
                     </label>
                 </div>
 
                 <!-- Cấu hình Nhãn Niêm phong -->
-                <div id="printSealConfig" class="hidden space-y-2 bg-orange-50 p-4 rounded-lg border border-orange-100">
-                    <label class="block text-sm font-bold text-orange-800">Vị trí dán niêm phong</label>
-                    <input type="text" id="printSealLocation" list="sealLocationsList" class="w-full px-4 py-2 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white" placeholder="VD: Đáy hộp, Ốc lề...">
+                <div id="printSealConfig" class="hidden space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Vị trí niêm phong</label>
+                    <input type="text" id="printSealLocation" list="sealLocationsList" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" placeholder="Nhập hoặc chọn vị trí (VD: Đáy hộp, Ốc lề)...">
                     <datalist id="sealLocationsList"></datalist>
                 </div>
             </div>
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                <button type="button" onclick="app.closePrintSettings()" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors shadow-sm">Hủy</button>
-                <button type="button" onclick="app.generatePreview()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
-                    Tạo Tem In <i class="fa-solid fa-arrow-right"></i>
+            <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 rounded-b-xl">
+                <button type="button" onclick="app.closePrintSettings()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
+                <button type="button" onclick="app.generatePreview()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                    Tiếp tục <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Xem trước Nhãn In -->
-    <div id="printPreviewModal" class="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 relative flex flex-col overflow-hidden border border-gray-200" id="printPreviewContent">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white shadow-sm z-10">
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                    <i class="fa-solid fa-eye text-blue-500"></i> Xem trước nhãn in
-                </h3>
-                <button type="button" onclick="app.closePrintPreview()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+    <div id="printPreviewModal" class="fixed inset-0 bg-black/50 z-[90] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg transform scale-95 transition-transform duration-300 relative flex flex-col" id="printPreviewContent">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-gray-800">Xem trước nhãn in</h3>
+                <button type="button" onclick="app.closePrintPreview()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                     <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
-            
-            <!-- Vùng Background kẻ ô (Pattern) để nổi bật con tem màu trắng -->
-            <div class="p-8 flex justify-center items-center overflow-auto relative" style="min-height: 250px; background-color: #f1f5f9; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 16px 16px;">
-                <!-- Container chứa bản Preview Ảo, có hiệu ứng đổ bóng mô phỏng tờ giấy -->
-                <div id="labelPreviewContainer" style="background: white; border-radius: 2px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); transform-origin: center center; transition: transform 0.2s;">
-                    <!-- Nội dung HTML của tem sẽ được chèn bằng JS vào đây -->
+            <div class="p-6 bg-gray-200 flex justify-center items-center overflow-auto rounded-b-xl" style="min-height: 250px;">
+                <!-- Vùng chứa bản preview ảo -->
+                <div id="labelPreviewContainer" style="background: white; border-radius: 4px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform-origin: top center;">
+                    <!-- Nội dung label sẽ chèn vào đây -->
                 </div>
             </div>
-            
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between rounded-b-xl z-10">
-                <button type="button" onclick="app.backToPrintSettings()" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-arrow-left"></i> Quay lại sửa
+            <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-between rounded-b-xl">
+                <button type="button" onclick="app.backToPrintSettings()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
                 </button>
-                <button type="button" onclick="app.executePrint()" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-print"></i> Tải & In Ngay
+                <button type="button" onclick="app.executePrint()" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> In nhãn
                 </button>
             </div>
         </div>
     </div>
-
     <!-- Modal: Quét Camera QR / Barcode -->
-    <div id="scannerModal" class="fixed inset-0 bg-black/80 z-[95] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4 backdrop-blur-sm">
-        <div class="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 relative flex flex-col border border-gray-700 overflow-hidden" id="scannerModalContent">
-            <div class="px-6 py-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 z-10">
-                <h3 class="font-bold text-lg text-white flex items-center gap-2">
-                    <i class="fa-solid fa-expand text-blue-400"></i> Quét mã QR/Barcode
-                </h3>
-                <button type="button" onclick="app.closeScanner()" class="text-gray-400 hover:text-white transition-colors focus:outline-none bg-gray-800 hover:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center">
-                    <i class="fa-solid fa-times"></i>
+    <div id="scannerModal" class="fixed inset-0 bg-black/50 z-[95] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300 relative flex flex-col" id="scannerModalContent">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold text-lg text-gray-800">Quét mã QR / Barcode</h3>
+                <button type="button" onclick="app.closeScanner()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fa-solid fa-times text-xl"></i>
                 </button>
             </div>
-            
-            <!-- Vùng Camera đen ngòm -->
-            <div class="p-0 bg-black flex justify-center items-center relative w-full h-[350px]">
-                <div id="reader" style="width: 100%; height: 100%; border: none;"></div>
-                
-                <!-- Hiệu ứng khung ngắm (Viewfinder) ảo -->
-                <div class="absolute inset-0 pointer-events-none border-[40px] border-black/50"></div>
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] border-2 border-green-500 rounded-lg pointer-events-none opacity-80 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]">
-                    <!-- 4 góc ngắm màu xanh lá -->
-                    <div class="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-green-500 rounded-tl"></div>
-                    <div class="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-green-500 rounded-tr"></div>
-                    <div class="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-green-500 rounded-bl"></div>
-                    <div class="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-green-500 rounded-br"></div>
-                </div>
+            <div class="p-4 bg-gray-900 flex justify-center items-center relative min-h-[300px]">
+                <div id="reader" style="width: 100%; border-radius: 8px; overflow: hidden; background: #000;"></div>
             </div>
-            
-            <div class="px-6 py-4 border-t border-gray-800 bg-gray-900 flex justify-center">
-                <p class="text-gray-400 text-sm text-center">Đưa mã vạch hoặc mã QR vào giữa khung hình để tự động quét.</p>
+            <div class="px-6 py-4 border-t border-gray-100 bg-white flex justify-end rounded-b-xl">
+                <button type="button" onclick="app.closeScanner()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors w-full">Đóng Camera</button>
             </div>
         </div>
     </div>
-
     <!-- Toast Notification Container -->
-    <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toastContainer" class="fixed top-4 right-4 z-[90] flex flex-col gap-2 pointer-events-none"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -624,11 +568,11 @@
             showToast: (message, type = 'success') => {
                 const container = document.getElementById('toastContainer');
                 const toast = document.createElement('div');
-                const bg = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
-                const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+                const bg = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+                const icon = type === 'success' ? 'fa-check' : (type === 'error' ? 'fa-xmark' : 'fa-info');
                 
-                toast.className = `toast-enter flex items-center gap-3 ${bg} text-white px-5 py-3 rounded-lg shadow-xl pointer-events-auto border border-white/10 backdrop-blur-md`;
-                toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i><span class="font-medium text-sm">${message}</span>`;
+                toast.className = `toast-enter flex items-center gap-3 ${bg} text-white px-5 py-3 rounded-lg shadow-lg pointer-events-auto`;
+                toast.innerHTML = `<i class="fa-solid ${icon}"></i><span class="font-medium text-sm">${message}</span>`;
                 container.appendChild(toast);
                 
                 requestAnimationFrame(() => {
@@ -666,11 +610,10 @@
 
                 // Các biến lưu trạng thái in
                 this.currentPrintId = null;
-                this.currentPrintWidth = 40;
+                this.currentPrintWidth = 50;
                 this.currentPrintHeight = 30;
                 this.currentPrintIsBox = false;
                 this.currentPrintHtml = '';
-                this.html5QrcodeScanner = null; // Biến lưu instance Camera
                 
                 this.initApp();
                 this.bindEvents();
@@ -686,7 +629,7 @@
                         appContainer.style.display = 'flex';
                         appContainer.classList.remove('hidden');
                         if (this.products.length === 0) {
-                            UI.showToast("Đã tải xong kho. Dữ liệu hiện đang trống.", "info");
+                            UI.showToast("Đã tải xong hoặc dữ liệu trống.", "info");
                         }
                     }
                 }, 5000);
@@ -706,7 +649,7 @@
                 } catch (error) { 
                     console.error("Init Error:", error); 
                     document.getElementById('loading-screen').style.display = 'none';
-                    UI.showToast("Không thể khởi tạo Cơ sở dữ liệu Firebase", "error");
+                    UI.showToast("Không thể khởi tạo CSDL", "error");
                 }
             }
 
@@ -812,7 +755,7 @@
                         if(oldProduct.purchasePlace && !document.getElementById('productPurchasePlace').value) document.getElementById('productPurchasePlace').value = oldProduct.purchasePlace;
                         if(oldProduct.hasBox !== undefined && !document.getElementById('productHasBox').checked) document.getElementById('productHasBox').checked = oldProduct.hasBox;
                         
-                        UI.showToast("Đã điền nhanh thông tin từ lần nhập kho trước.");
+                        UI.showToast("Đã điền thông tin từ lần nhập trước.");
                     }
                 };
 
@@ -899,11 +842,11 @@
                 this.currentView = viewName;
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.classList.remove('bg-blue-600', 'text-white');
-                    btn.classList.add('text-gray-500', 'hover:bg-gray-100', 'hover:text-gray-900');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
                 });
                 const activeBtn = document.getElementById(`nav-${viewName}`);
                 if(activeBtn) {
-                    activeBtn.classList.remove('text-gray-500', 'hover:bg-gray-100', 'hover:text-gray-900');
+                    activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700', 'hover:text-white');
                     activeBtn.classList.add('bg-blue-600', 'text-white');
                 }
 
@@ -913,7 +856,7 @@
                 });
                 document.getElementById(`view-${viewName}`).classList.remove('hidden');
 
-                const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Thiết lập kho' };
+                const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Thiết lập' };
                 document.getElementById('pageTitle').innerText = titles[viewName] || 'WMS';
 
                 this.render();
@@ -937,13 +880,13 @@
                     this.categories.forEach(c => {
                         if(!c.name) return;
                         catTbody.innerHTML += `
-                            <tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                                <td class="px-6 py-3 font-bold text-gray-800">${c.prefix}</td>
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 font-semibold text-gray-800">${c.prefix}</td>
                                 <td class="px-6 py-3 text-gray-700">${c.name}</td>
                                 <td class="px-6 py-3 text-right">
                                     <div class="flex justify-end gap-2">
-                                        <button onclick="app.openConfigModal('category', '${c.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"><i class="fa-solid fa-pen text-sm"></i></button>
-                                        <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100 transition-colors"><i class="fa-solid fa-trash text-sm"></i></button>
+                                        <button onclick="app.openConfigModal('category', '${c.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
                                 </td>
                             </tr>`;
@@ -955,12 +898,12 @@
                     this.brands.forEach(b => {
                         if(!b.name) return;
                         brandTbody.innerHTML += `
-                            <tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                                <td class="px-6 py-3 text-gray-700 font-medium">${b.name}</td>
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 text-gray-700">${b.name}</td>
                                 <td class="px-6 py-3 text-right">
                                     <div class="flex justify-end gap-2">
-                                        <button onclick="app.openConfigModal('brand', '${b.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"><i class="fa-solid fa-pen text-sm"></i></button>
-                                        <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100 transition-colors"><i class="fa-solid fa-trash text-sm"></i></button>
+                                        <button onclick="app.openConfigModal('brand', '${b.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
                                 </td>
                             </tr>`;
@@ -972,12 +915,12 @@
                     this.locations.forEach(l => {
                         if(!l.name) return;
                         locTbody.innerHTML += `
-                            <tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                                <td class="px-6 py-3 text-gray-700 font-medium">${l.name}</td>
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 text-gray-700">${l.name}</td>
                                 <td class="px-6 py-3 text-right">
                                     <div class="flex justify-end gap-2">
-                                        <button onclick="app.openConfigModal('location', '${l.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"><i class="fa-solid fa-pen text-sm"></i></button>
-                                        <button onclick="app.requestDelete('${l.id}', 'location')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100 transition-colors"><i class="fa-solid fa-trash text-sm"></i></button>
+                                        <button onclick="app.openConfigModal('location', '${l.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${l.id}', 'location')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
                                 </td>
                             </tr>`;
@@ -989,12 +932,12 @@
                     this.sealLocations.forEach(s => {
                         if(!s.name) return;
                         sealTbody.innerHTML += `
-                            <tr class="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                                <td class="px-6 py-3 text-gray-700 font-medium">${s.name}</td>
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 text-gray-700">${s.name}</td>
                                 <td class="px-6 py-3 text-right">
                                     <div class="flex justify-end gap-2">
-                                        <button onclick="app.openConfigModal('sealLocation', '${s.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"><i class="fa-solid fa-pen text-sm"></i></button>
-                                        <button onclick="app.requestDelete('${s.id}', 'sealLocation')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100 transition-colors"><i class="fa-solid fa-trash text-sm"></i></button>
+                                        <button onclick="app.openConfigModal('sealLocation', '${s.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${s.id}', 'sealLocation')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
                                 </td>
                             </tr>`;
@@ -1030,10 +973,10 @@
                         const qtyUI = !trackQty ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
                         tbody.innerHTML += `
-                            <tr class="hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-50" onclick="app.openQuickAdjustById('${p.id}')">
-                                <td class="px-6 py-4 text-sm font-bold align-middle text-blue-600 hover:underline">${p.code || ''}</td>
-                                <td class="px-6 py-4 text-sm align-middle font-medium text-gray-800">${p.name}</td>
-                                <td class="px-6 py-4 text-sm font-bold text-right align-middle">${qtyUI}</td>
+                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="app.openQuickAdjustById('${p.id}')">
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-semibold align-middle text-blue-600 hover:underline">${p.code || ''}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm align-middle">${p.name}</td>
+                                <td class="px-6 py-3 border-b border-gray-50 text-sm font-bold text-right align-middle">${qtyUI}</td>
                             </tr>`;
                     });
                     document.getElementById('stat-low-stock').innerText = lowStockCount;
@@ -1064,42 +1007,42 @@
                         const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                         
                         const catName = catObj ? catObj.name : '';
-                        const brandUI = brandObj ? `<span class="text-xs text-purple-600 font-semibold inline-block bg-purple-50 px-2 py-0.5 rounded border border-purple-100 ml-2 shadow-sm"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
+                        const brandUI = brandObj ? `<span class="text-xs text-purple-600 font-semibold inline-block bg-purple-50 px-2 py-0.5 rounded border border-purple-100 ml-2"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
                         
                         let metaTags = [];
-                        if (catName) metaTags.push(`<span class="px-3 py-1 bg-gray-100 rounded-lg border border-gray-200 whitespace-nowrap text-sm text-gray-700 shadow-sm">${catName}</span>`);
+                        if (catName) metaTags.push(`<span class="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 whitespace-nowrap text-sm text-gray-600">${catName}</span>`);
                         if (brandUI) metaTags.push(brandUI);
 
                         let metaInfo = [];
-                        if(p.model) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`);
-                        if(p.color) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-palette"></i> ${p.color}</span>`);
-                        if(placeObj && placeObj.name) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100"><i class="fa-solid fa-location-dot"></i> ${placeObj.name}</span>`);
-                        if(p.hasBox) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-600 px-2 py-0.5 rounded border border-amber-100"><i class="fa-solid fa-box-open"></i> Có hộp</span>`);
+                        if(p.model) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`);
+                        if(p.color) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-palette"></i> ${p.color}</span>`);
+                        if(placeObj && placeObj.name) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fa-solid fa-location-dot"></i> ${placeObj.name}</span>`);
+                        if(p.hasBox) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100"><i class="fa-solid fa-box-open"></i> Có hộp</span>`);
                         
-                        const metaUI = metaInfo.length > 0 ? `<div class="text-xs mt-2 flex flex-wrap gap-2">${metaInfo.join('')}</div>` : '';
-                        const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1 bg-orange-50 w-max px-1.5 rounded">S/N: ${p.serial}</div>` : '';
+                        const metaUI = metaInfo.length > 0 ? `<div class="text-[11px] mt-2 flex flex-wrap gap-2">${metaInfo.join('')}</div>` : '';
+                        const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1">S/N: ${p.serial}</div>` : '';
                         const skuUI = p.sku ? `<div class="text-[11px] text-gray-500 mt-1 font-mono flex items-center gap-1">SKU: ${p.sku}</div>` : '';
                         
                         const isTracked = p.trackQuantity !== false;
-                        const qtyUI = !isTracked ? `<span class="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap border border-gray-200 shadow-sm">1 (Mặc định)</span>` : `<span class="px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm border ${qty < 10 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}">${qty}</span>`;
+                        const qtyUI = !isTracked ? `<span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 whitespace-nowrap">1 (Mặc định)</span>` : `<span class="px-3 py-1 rounded-full text-xs font-bold ${qty < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${qty}</span>`;
 
                         tbody.innerHTML += `
-                            <tr class="hover:bg-blue-50/50 border-b border-gray-50 transition-colors">
-                                <td class="px-6 py-5 font-bold text-gray-900 align-top w-24 text-base">${p.code || ''}</td>
-                                <td class="px-6 py-5 text-sm text-gray-600 align-top w-48 whitespace-nowrap">${metaTags.join('')}</td>
-                                <td class="px-6 py-5 font-medium text-gray-700 align-top">
+                            <tr class="hover:bg-gray-50 border-b border-gray-50">
+                                <td class="px-6 py-4 font-semibold text-gray-800 align-top w-24">${p.code || ''}</td>
+                                <td class="px-6 py-4 text-sm text-gray-600 align-top w-48 whitespace-nowrap">${metaTags.join('')}</td>
+                                <td class="px-6 py-4 font-medium text-gray-700 align-top">
                                     <div class="text-base font-bold text-gray-800">${p.name}</div>
                                     ${skuUI}
                                     ${serialUI}
                                     ${metaUI}
                                 </td>
-                                <td class="px-6 py-5 text-right align-top w-32">${qtyUI}</td>
-                                <td class="px-6 py-5 text-right font-bold text-blue-600 align-top w-32">${UI.formatCurrency(p.price)}</td>
-                                <td class="px-6 py-5 text-right align-top w-40">
-                                    <div class="flex justify-end gap-2">
-                                        <button onclick="app.openPrintSettings('${p.id}')" class="w-9 h-9 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-800 hover:text-white flex items-center justify-center transition-colors shadow-sm" title="In nhãn QR"><i class="fa-solid fa-print text-sm"></i></button>
-                                        <button onclick="app.openModal('${p.id}')" class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors shadow-sm" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                                        <button onclick="app.requestDelete('${p.id}', 'product')" class="w-9 h-9 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors shadow-sm" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
+                                <td class="px-6 py-4 text-right align-top w-32">${qtyUI}</td>
+                                <td class="px-6 py-4 text-right font-medium text-blue-600 align-top w-32">${UI.formatCurrency(p.price)}</td>
+                                <td class="px-6 py-4 text-right align-top w-36">
+                                    <div class="flex justify-end gap-2 opacity-100 transition-opacity">
+                                        <button onclick="app.openPrintSettings('${p.id}')" class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white flex items-center justify-center transition-colors" title="In nhãn"><i class="fa-solid fa-print text-sm"></i></button>
+                                        <button onclick="app.openModal('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${p.id}', 'product')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors" title="Xóa"><i class="fa-solid fa-trash text-sm"></i></button>
                                     </div>
                                 </td>
                             </tr>`;
@@ -1124,7 +1067,7 @@
                 document.getElementById('productHasBox').checked = false;
 
                 if (id) {
-                    document.getElementById('modalTitle').innerText = 'Sửa Thông Tin Sản Phẩm';
+                    document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
                     const p = this.products.find(x => x.id === id);
                     if(p) {
                         document.getElementById('productId').value = p.id;
@@ -1225,7 +1168,7 @@
                 try {
                     if (this.products.some(p => p.code === code && p.id !== originalId)) {
                         UI.showToast(`Mã sản phẩm ${code} đã tồn tại!`, "error"); 
-                        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Sản Phẩm';
+                        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
                         return;
                     }
 
@@ -1244,7 +1187,7 @@
                 } catch (error) {
                     UI.showToast("Có lỗi xảy ra khi lưu!", "error");
                 } finally {
-                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Sản Phẩm';
+                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu';
                 }
             }
 
@@ -1375,7 +1318,7 @@
                             await set(ref(this.db, 'sealLocations/' + safeKey), { name, id: safeKey });
                         }
                     }
-                    UI.showToast(oldId ? "Cập nhật thiết lập thành công!" : "Thêm thiết lập mới thành công!");
+                    UI.showToast(oldId ? "Cập nhật thành công!" : "Thêm mới thành công!");
                     this.closeConfigModal();
                 } catch (error) { UI.showToast("Lỗi khi lưu!", "error"); }
             }
@@ -1405,16 +1348,16 @@
                     if(this.deleteCandidateType === 'sealLocation') path = 'sealLocations';
                     
                     await remove(ref(this.db, path + '/' + this.deleteCandidateId));
-                    UI.showToast("Đã xóa vĩnh viễn dữ liệu thành công.");
+                    UI.showToast("Đã xóa thành công");
                     this.closeConfirmModal();
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
-                finally { btn.disabled = false; btn.innerHTML = 'Xóa vĩnh viễn'; }
+                finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
             }
 
             triggerQuickAdjust() {
                 const val = document.getElementById('quickAdjustInput').value.trim();
                 if (!val) {
-                    UI.showToast('Vui lòng nhập Serial, Mã SP hoặc quét SKU trước!', 'error');
+                    UI.showToast('Vui lòng nhập Serial, Mã SP hoặc SKU!', 'error');
                     return;
                 }
                 this.processQuickAdjustScan(val);
@@ -1425,7 +1368,7 @@
                 const product = this.products.find(p => p.sku === qrCode || p.serial === qrCode || p.code === qrCode);
                 
                 if (!product) {
-                    UI.showToast(`Kho không chứa sản phẩm mang mã: ${qrCode}`, "error");
+                    UI.showToast(`Không tìm thấy sản phẩm có mã: ${qrCode}`, "error");
                     return;
                 }
                 this.openQuickAdjustById(product.id);
@@ -1436,7 +1379,7 @@
                 if (!product) return;
 
                 if (product.trackQuantity === false) {
-                    UI.showToast("Sản phẩm này thuộc dạng vật tư không đếm số lượng!", "error");
+                    UI.showToast("Sản phẩm này không theo dõi số lượng tồn kho!", "error");
                     return;
                 }
 
@@ -1476,14 +1419,14 @@
                         updatedAt: new Date().toISOString()
                     });
                     
-                    const actionTxt = multiplier === 1 ? 'Nhập kho (+)' : 'Xuất kho (-)';
+                    const actionTxt = multiplier === 1 ? 'Cộng (+)' : 'Trừ (-)';
                     const colorTxt = multiplier === 1 ? 'text-green-600' : 'text-red-600';
-                    UI.showToast(`Đã ${actionTxt} ${amount} cái cho ${p.name}`);
-                    this.addQuickHistory(`<strong>${p.code || p.name}</strong>: <span class="${colorTxt} font-bold">${actionTxt} ${amount}</span> (Tồn cuối: ${newQty})`);
+                    UI.showToast(`Đã ${actionTxt} ${amount} sản phẩm ${p.name}`);
+                    this.addQuickHistory(`<strong>${p.code || p.name}</strong>: <span class="${colorTxt} font-bold">${actionTxt} ${amount}</span> (Còn: ${newQty})`);
                     
                     this.closeQuickAdjust();
                 } catch (error) {
-                    UI.showToast("Lỗi đồng bộ dữ liệu khi điều chỉnh tồn kho", "error");
+                    UI.showToast("Lỗi khi cập nhật tồn kho", "error");
                 }
             }
 
@@ -1494,7 +1437,7 @@
                 
                 const time = new Date().toLocaleTimeString('vi-VN', { hour12: false });
                 const li = document.createElement('li');
-                li.innerHTML = `<span class="text-xs text-gray-400 mr-2 font-mono">[${time}]</span> ${htmlMsg}`;
+                li.innerHTML = `<span class="text-xs text-gray-400 mr-2">[${time}]</span> ${htmlMsg}`;
                 
                 list.insertBefore(li, list.firstChild);
                 
@@ -1503,12 +1446,13 @@
                 }
             }
 
-            // ================= IN NHÃN QR =================
+            // ================= IN NHÃN =================
             openPrintSettings(id) {
                 this.currentPrintId = id;
                 document.getElementById('printBoxLabel').checked = false;
                 document.getElementById('printSealLocation').value = '';
                 
+                // Mặc định chọn nhãn thông tin
                 const typeRadios = document.getElementsByName('printType');
                 typeRadios[0].checked = true;
                 this.togglePrintType();
@@ -1536,7 +1480,8 @@
                 m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('scale-95');
                 setTimeout(() => m.classList.add('hidden'), 300);
             }
-generatePreview() {
+
+            generatePreview() {
                 const p = this.products.find(x => x.id === this.currentPrintId);
                 if(!p) return;
 
@@ -1553,73 +1498,81 @@ generatePreview() {
                     const brandObj = this.brands.find(b => b.id === p.brand);
                     const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                     
-                    // Cấu trúc HTML Nhãn Thông tin: Đã bỏ QR Code, tăng vọt kích thước font chữ
+                    // Tạo ảnh QR Code dạng Base64
+                    const qrValue = p.sku || p.code || 'N/A';
+                    const qrBase64 = new QRious({ value: qrValue, size: 120, level: 'M' }).toDataURL();
+                    
+                    // Cấu trúc HTML Nhãn Thông tin chia cột (Thông tin - QR)
                     this.currentPrintHtml = `
-                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.3; text-align: left;">
+                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
                             
                             <!-- Header có logo -->
-                            <div style="display: flex; align-items: center; border-bottom: 2px solid #000; padding-bottom: 1mm; margin-bottom: 1.5mm; justify-content: flex-start;">
-                                <svg viewBox="0 0 24 24" fill="currentColor" style="height: 4.5mm; width: 4.5mm; flex-shrink: 0; margin-right: 1.5mm;">
+                            <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm; justify-content: flex-start;">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="height: 3.5mm; width: 3.5mm; flex-shrink: 0; margin-right: 1mm;">
                                     <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
                                 </svg>
-                                <div style="font-size: 9pt; font-weight: bold; text-transform: uppercase;">Quản lý sản phẩm</div>
+                                <div style="font-size: 7pt; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
                             </div>
                             
                             <!-- Tiêu đề Thông tin -->
-                            <div style="font-size: 8.5pt; font-weight: bold; margin-bottom: 1.5mm; color: #222;">
-                                THÔNG TIN SẢN PHẨM ${this.currentPrintIsBox ? '(VỎ HỘP)' : ''}
+                            <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
+                                Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                             </div>
                             
-                            <!-- Các dòng thông tin dàn trải toàn bộ chiều ngang, font chữ to -->
-                            <div style="display: flex; flex-grow: 1; flex-direction: column; gap: 0.8mm; overflow: hidden; font-size: 9pt;">
-                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    <span>Tên: </span><span style="font-weight: bold; font-size: 10pt;">${p.name || ''}</span>
+                            <!-- Các dòng thông tin và QR Code -->
+                            <div style="display: flex; flex-grow: 1; align-items: center; gap: 0.5mm; overflow: hidden;">
+                                <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal; min-width: 0;">
+                                    <div><span>Tên: </span><span style="font-weight: bold;">${p.name || ''}</span></div>
+                                    <div><span>Hãng: </span><span>${brandObj ? brandObj.name : ''}</span></div>
+                                    <div><span>Giá: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span></div>
+                                    <div><span>SKU: </span><span>${p.sku || ''}</span></div>
+                                    <div><span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span></div>
                                 </div>
-                                <div>
-                                    <span>Hãng: </span><span style="font-weight: bold;">${brandObj ? brandObj.name : '---'}</span>
-                                </div>
-                                <div>
-                                    <span>Giá: </span><span style="font-weight: bold; font-size: 10pt;">${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
-                                </div>
-                                <div>
-                                    <span>SKU/SN: </span><span style="font-weight: bold; font-size: 10pt;">${p.sku || p.serial || p.code || '---'}</span>
+                                <div style="width: 10mm; height: 10mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center;">
+                                    <img src="${qrBase64}" style="max-width: 100%; max-height: 100%; display: block;" />
                                 </div>
                             </div>
 
                             <!-- Dòng chân trang (Phân loại) -->
-                            <div style="text-align: left; margin-top: auto; font-size: 8pt; font-weight: bold; border-top: 1.5px dashed #000; padding-top: 1mm;">
-                                <span>Phân loại: </span><span>${catObj ? catObj.name : '---'}</span>
+                            <div style="text-align: left; margin-top: auto; font-size: 6pt; font-weight: bold; border-top: 1px dashed #000; padding-top: 0.5mm;">
+                                <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
                             </div>
                         </div>
                     `;
-                } else if (printType === 'seal') {
+                }
+                else if (printType === 'seal') {
                     const sealLoc = document.getElementById('printSealLocation').value.trim();
                     if (!sealLoc) {
                         UI.showToast("Vui lòng nhập vị trí niêm phong!", "error");
                         return;
                     }
                     
+                    // Tự động ghi dữ liệu vào thiết lập nếu chưa có
                     const safeKey = this.cleanKey(sealLoc);
                     if (!this.sealLocations.some(l => l.id === safeKey)) {
                         set(ref(this.db, 'sealLocations/' + safeKey), { name: sealLoc, id: safeKey });
                     }
 
+                    // Format thời gian hiện tại
                     const now = new Date();
                     const dtStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}-${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
 
-                    // Cấu trúc HTML Nhãn Niêm phong: Phóng to chữ CẤM GỠ
+                    // Cấu trúc HTML Nhãn Niêm phong
                     this.currentPrintHtml = `
-                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 2mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.3; border: 2px solid #000;">
-                            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 2mm; background: #000; color: #fff; padding: 1mm; border-radius: 3px;">
-                                <div style="font-size: 12pt; font-weight: bold; letter-spacing: 1px;">CẤM GỠ THÁO</div>
+                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.2; border: 1.5px solid #000;">
+                            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1.5mm; background: #000; color: #fff; padding: 0.8mm; border-radius: 2px;">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="height: 4mm; width: 4mm; flex-shrink: 0; margin-right: 1mm;">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9l11.21 11.21C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/>
+                                </svg>
+                                <div style="font-size: 8pt; font-weight: bold; letter-spacing: 0.5px;">CẤM GỠ</div>
                             </div>
                             
-                            <div style="font-size: 11pt; text-align: center; font-weight: 900; margin-bottom: 2.5mm;">NHÃN NIÊM PHONG</div>
+                            <div style="font-size: 7.5pt; text-align: center; font-weight: 900; margin-bottom: 1.5mm;">NHÃN NIÊM PHONG</div>
                             
-                            <div style="font-size: 10pt; display: flex; flex-direction: column; gap: 1.5mm; flex-grow: 1; word-break: break-word; white-space: normal; text-align: left; padding: 0 1mm;">
-                                <div><span style="font-weight:bold">SKU/Mã:</span> ${p.sku || p.code || 'N/A'}</div>
+                            <div style="font-size: 7pt; display: flex; flex-direction: column; gap: 0.8mm; flex-grow: 1; word-break: break-word; white-space: normal; text-align: left; padding: 0 0.5mm;">
+                                <div><span style="font-weight:bold">SKU:</span> ${p.sku || 'N/A'}</div>
                                 <div><span style="font-weight:bold">Vị trí:</span> ${sealLoc}</div>
-                                <div style="font-size: 8pt; margin-top: auto; text-align: center; border-top: 1.5px dashed #000; padding-top: 1.5mm; font-weight: bold;">
+                                <div style="font-size: 6pt; margin-top: auto; text-align: center; border-top: 1px dashed #000; padding-top: 1mm; font-weight: bold;">
                                     ${dtStr}
                                 </div>
                             </div>
@@ -1639,6 +1592,13 @@ generatePreview() {
                 }, 300);
             }
 
+            backToPrintSettings() {
+                this.closePrintPreview();
+                setTimeout(() => {
+                    this.openPrintSettings(this.currentPrintId);
+                }, 300);
+            }
+
             closePrintPreview() {
                 const m = document.getElementById('printPreviewModal'); 
                 const c = document.getElementById('printPreviewContent');
@@ -1646,118 +1606,86 @@ generatePreview() {
                 setTimeout(() => m.classList.add('hidden'), 300);
             }
 
-            async executePrint() {
-                try {
-                    const container = document.getElementById('labelPreviewContainer');
-                    // Sử dụng html2canvas để render ra ảnh sắc nét
-                    const canvas = await html2canvas(container, {
-                        scale: 4, // Tăng scale lên 4 để chất lượng ảnh in sắc nét nhất
-                        useCORS: true,
-                        logging: false
-                    });
-                    
-                    const imgData = canvas.toDataURL('image/png');
-                    
-                    // Tạo một Iframe ẩn để thực hiện lệnh in trực tiếp của hệ điều hành
-                    const iframe = document.createElement('iframe');
-                    iframe.style.position = 'absolute';
-                    iframe.style.width = '0px';
-                    iframe.style.height = '0px';
-                    iframe.style.border = 'none';
-                    document.body.appendChild(iframe);
+            executePrint() {
+                const iframe = document.createElement('iframe');
+                iframe.style.position = 'absolute';
+                iframe.style.width = '0px';
+                iframe.style.height = '0px';
+                iframe.style.border = 'none';
+                document.body.appendChild(iframe);
 
-                    const doc = iframe.contentWindow.document;
-                    doc.open();
-                    // Trang in được thiết lập đúng kích thước mm và tự xoay ngang
-                    doc.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>In Nhãn</title>
-                            <style>
-                                @page {
-                                    size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
-                                    margin: 0;
-                                }
-                                body {
-                                    margin: 0;
-                                    padding: 0;
-                                    display: flex;
-                                    justify-content: center;
-                                    align-items: center;
-                                    background: #fff;
-                                }
-                                img {
-                                    width: ${this.currentPrintWidth}mm;
-                                    height: ${this.currentPrintHeight}mm;
-                                    object-fit: contain;
-                                    image-rendering: pixelated;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <img src="${imgData}" />
-                            <script>
-                                window.onload = function() {
-                                    setTimeout(() => {
-                                        window.print();
-                                    }, 300);
-                                };
-                            <\/script>
-                        </body>
-                        </html>
-                    `);
-                    doc.close();
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                // Trang in thật thiết lập Landscape tự động xoay ngang máy in
+                doc.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>In Nhãn</title>
+                        <style>
+                            @page {
+                                size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                                padding: 0;
+                            }
+                            * {
+                                margin: 0;
+                                padding: 0;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${this.currentPrintHtml}
+                    </body>
+                    </html>
+                `);
+                doc.close();
 
-                    iframe.contentWindow.focus();
-                    
-                    // Lắng nghe sự kiện sau khi in xong (hoặc hủy in) để đóng Preview và xóa Iframe
-                    iframe.contentWindow.onafterprint = () => {
+                iframe.contentWindow.focus();
+                
+                setTimeout(() => {
+                    iframe.contentWindow.print();
+                    setTimeout(() => {
                         document.body.removeChild(iframe);
                         this.closePrintPreview();
-                    };
-
-                } catch (error) {
-                    console.error("Lỗi tạo bản in:", error);
-                    UI.showToast("Không thể thực hiện lệnh in.", "error");
-                }
+                    }, 500);
+                }, 250);
             }
-
             openScanner() {
                 const m = document.getElementById('scannerModal'); 
                 const c = document.getElementById('scannerModalContent');
                 m.classList.remove('hidden'); void m.offsetWidth;
                 m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
 
-                if (this.html5QrcodeScanner && this.html5QrcodeScanner.isScanning) {
-                    this.html5QrcodeScanner.stop().then(() => this.html5QrcodeScanner.clear()).catch(console.error);
+                if (this.html5QrcodeScanner) {
+                    this.html5QrcodeScanner.clear();
                 }
 
-                setTimeout(() => {
-                    this.html5QrcodeScanner = new Html5Qrcode("reader");
-                    const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
-                    
-                    this.html5QrcodeScanner.start(
-                        { facingMode: "environment" }, 
-                        config, 
-                        (decodedText) => {
-                            document.getElementById('quickAdjustInput').value = decodedText;
-                            UI.showToast("Đã quét mã thành công!", "success");
-                            this.closeScanner();
-                            setTimeout(() => {
-                                this.triggerQuickAdjust();
-                            }, 500);
-                        }, 
-                        (error) => { /* Ignore background scan errors */ }
-                    ).catch(err => {
-                        console.error("Camera Error: ", err);
-                        UI.showToast("Không thể mở Camera. Vui lòng kiểm tra quyền truy cập hoặc HTTPS.", "error");
-                    });
-                }, 300);
+                this.html5QrcodeScanner = new Html5Qrcode("reader");
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                
+                // Mở camera sau
+                this.html5QrcodeScanner.start(
+                    { facingMode: "environment" }, 
+                    config, 
+                    (decodedText) => {
+                        // Thành công
+                        this.closeScanner();
+                        document.getElementById('quickAdjustInput').value = decodedText;
+                        UI.showToast("Đã quét mã thành công!", "success");
+                        this.triggerQuickAdjust();
+                    }, 
+                    (error) => { /* Bỏ qua lỗi nền (không tìm thấy qr) */ }
+                ).catch(err => {
+                    UI.showToast("Không thể mở Camera. Vui lòng cấp quyền truy cập máy ảnh.", "error");
+                });
             }
 
             closeScanner() {
-                if (this.html5QrcodeScanner && this.html5QrcodeScanner.isScanning) {
+                if (this.html5QrcodeScanner) {
                     this.html5QrcodeScanner.stop().then(() => {
                         this.html5QrcodeScanner.clear();
                     }).catch(err => console.error("Lỗi tắt camera:", err));
