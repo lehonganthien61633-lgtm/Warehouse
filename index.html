@@ -1554,14 +1554,15 @@
                     const brandObj = this.brands.find(b => b.id === p.brand);
                     const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                     
-                    // Tăng kích thước (size) và chất lượng QR lên tối đa
+                    // Tăng kích thước và mức độ chi tiết (High) của QR Code để khi in ra rõ nét hơn
                     const qrValue = p.sku || p.code || 'N/A';
-                    const qrBase64 = new QRious({ value: qrValue, size: 500, level: 'H' }).toDataURL('image/jpeg', 1.0);
+                    const qrBase64 = new QRious({ value: qrValue, size: 250, level: 'H' }).toDataURL('image/jpeg', 1.0);
                     
-                    // Cấu trúc HTML: Phóng to QR Code (18mm) và đẩy sát lề phải
+                    // Cấu trúc HTML Nhãn Thông tin: Tăng kích thước khu vực QR Code
                     this.currentPrintHtml = `
                         <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
                             
+                            <!-- Header có logo -->
                             <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 0.5mm; margin-bottom: 1mm; justify-content: flex-start;">
                                 <svg viewBox="0 0 24 24" fill="currentColor" style="height: 3.5mm; width: 3.5mm; flex-shrink: 0; margin-right: 1mm;">
                                     <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
@@ -1569,24 +1570,27 @@
                                 <div style="font-size: 7pt; font-weight: bold;">Quản lý sản phẩm</div>
                             </div>
                             
-                            <div style="font-size: 6pt; font-weight: bold; margin-bottom: 1mm;">
+                            <!-- Tiêu đề Thông tin -->
+                            <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 1mm;">
                                 Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                             </div>
                             
+                            <!-- Các dòng thông tin và QR Code được phóng to -->
                             <div style="display: flex; flex-grow: 1; align-items: flex-start; gap: 1mm; overflow: hidden;">
                                 <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.3mm; flex-grow: 1; word-break: break-word; white-space: normal; min-width: 0;">
                                     <div><span>Tên: </span><span style="font-weight: bold;">${p.name || ''}</span></div>
                                     <div><span>Hãng: </span><span>${brandObj ? brandObj.name : ''}</span></div>
                                     <div><span>Giá: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span></div>
-                                    <div><span>SKU: </span><span style="font-weight: bold; font-size: 7pt;">${p.sku || ''}</span></div>
+                                    <div><span>SKU: </span><span style="font-weight: bold;">${p.sku || ''}</span></div>
                                     <div><span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span></div>
                                 </div>
-                                <!-- Vùng QR Code được mở rộng tối đa (18x18mm) -->
-                                <div style="width: 18mm; height: 18mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center; margin-left: auto;">
+                                <!-- Tăng width/height của bao chứa QR Code lên khoảng 12-14mm (tùy thuộc không gian tem) -->
+                                <div style="width: 14mm; height: 14mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center; border: 1px solid #ddd; padding: 0.5mm; border-radius: 2px;">
                                     <img src="${qrBase64}" style="width: 100%; height: 100%; display: block; image-rendering: pixelated;" />
                                 </div>
                             </div>
 
+                            <!-- Dòng chân trang (Phân loại) -->
                             <div style="text-align: left; margin-top: auto; font-size: 6pt; font-weight: bold; border-top: 1px dashed #000; padding-top: 0.5mm;">
                                 <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
                             </div>
@@ -1658,14 +1662,16 @@
             async executePrint() {
                 try {
                     const container = document.getElementById('labelPreviewContainer');
+                    // Sử dụng html2canvas để render ra ảnh sắc nét
                     const canvas = await html2canvas(container, {
-                        scale: 4,
+                        scale: 4, // Tăng scale lên 4 để chất lượng ảnh in sắc nét nhất
                         useCORS: true,
                         logging: false
                     });
                     
                     const imgData = canvas.toDataURL('image/png');
                     
+                    // Tạo một Iframe ẩn để thực hiện lệnh in trực tiếp của hệ điều hành
                     const iframe = document.createElement('iframe');
                     iframe.style.position = 'absolute';
                     iframe.style.width = '0px';
@@ -1675,6 +1681,7 @@
 
                     const doc = iframe.contentWindow.document;
                     doc.open();
+                    // Trang in được thiết lập đúng kích thước mm và tự xoay ngang
                     doc.write(`
                         <!DOCTYPE html>
                         <html>
@@ -1717,6 +1724,7 @@
 
                     iframe.contentWindow.focus();
                     
+                    // Lắng nghe sự kiện sau khi in xong (hoặc hủy in) để đóng Preview và xóa Iframe
                     iframe.contentWindow.onafterprint = () => {
                         document.body.removeChild(iframe);
                         this.closePrintPreview();
@@ -1740,25 +1748,14 @@
 
                 setTimeout(() => {
                     this.html5QrcodeScanner = new Html5Qrcode("reader");
-                    
-                    // Cấu hình tăng cường độ nhạy:
-                    // fps: Tăng số khung hình quét mỗi giây
-                    // disableFlip: Tắt tính năng lật hình (do quét QR trên nhãn thường không bị ngược)
-                    // formatsToSupport: Ép bộ quét chỉ tìm mã QR, giúp phản hồi nhanh hơn nhiều
-                    const config = { 
-                        fps: 20, 
-                        qrbox: { width: 250, height: 250 }, 
-                        aspectRatio: 1.0,
-                        disableFlip: true,
-                        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
-                    };
+                    const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
                     
                     this.html5QrcodeScanner.start(
                         { facingMode: "environment" }, 
                         config, 
                         (decodedText) => {
                             document.getElementById('quickAdjustInput').value = decodedText;
-                            UI.showToast("Đã nhận diện thành công mã QR!", "success");
+                            UI.showToast("Đã quét mã thành công!", "success");
                             this.closeScanner();
                             setTimeout(() => {
                                 this.triggerQuickAdjust();
@@ -1767,7 +1764,7 @@
                         (error) => { /* Ignore background scan errors */ }
                     ).catch(err => {
                         console.error("Camera Error: ", err);
-                        UI.showToast("Lỗi mở Camera. Thiết bị từ chối quyền hoặc thiếu giao thức HTTPS.", "error");
+                        UI.showToast("Không thể mở Camera. Vui lòng kiểm tra quyền truy cập hoặc HTTPS.", "error");
                     });
                 }, 300);
             }
