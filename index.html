@@ -1635,28 +1635,46 @@
 
             async executePrint() {
                 try {
-                    const container = document.getElementById('labelPreviewContainer');
-                    const canvas = await html2canvas(container, {
-                        scale: 3, 
-                        useCORS: true,
-                        logging: false
-                    });
-                    
-                    const imgData = canvas.toDataURL('image/png');
-                    
                     const printWindow = window.open('', '_blank');
-                    if(printWindow) {
+                    
+                    if (printWindow) {
+                        // NẾU MỞ ĐƯỢC CỬA SỔ (Thường là trên Máy tính PC/Mac)
+                        // In trực tiếp bằng HTML thay vì quy ra ảnh, chữ sẽ nét 100% (Vector)
+                        // Có lệnh @page để ép trình duyệt tự xóa lề và tiêu đề mặc định
                         printWindow.document.write(`
+                            <!DOCTYPE html>
                             <html>
-                                <head><title>In Nhãn</title></head>
-                                <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#fff;">
-                                    <img src="${imgData}" style="width:${this.currentPrintWidth}mm;height:${this.currentPrintHeight}mm;object-fit:contain;" />
+                                <head>
+                                    <title>In Nhãn</title>
+                                    <style>
+                                        /* Ép kích thước trang và xóa bỏ margin/header/footer của trình duyệt */
+                                        @page {
+                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
+                                            margin: 0 !important;
+                                        }
+                                        body {
+                                            margin: 0;
+                                            padding: 0;
+                                            background: #fff;
+                                            display: flex;
+                                            justify-content: center;
+                                            align-items: center;
+                                            width: ${this.currentPrintWidth}mm;
+                                            height: ${this.currentPrintHeight}mm;
+                                            -webkit-print-color-adjust: exact;
+                                            print-color-adjust: exact;
+                                        }
+                                        * { box-sizing: border-box; }
+                                    </style>
+                                </head>
+                                <body>
+                                    ${this.currentPrintHtml}
                                     <script>
                                         window.onload = function() {
                                             setTimeout(() => {
                                                 window.print();
                                                 window.close();
-                                            }, 500);
+                                            }, 400);
                                         };
                                     <\/script>
                                 </body>
@@ -1664,19 +1682,27 @@
                         `);
                         printWindow.document.close();
                     } else {
-                        // Fallback cho iOS Safari nếu bị chặn popup
+                        // NẾU BỊ CHẶN POPUP (Thường là trên Điện thoại iOS/Safari)
+                        // Fallback: Dùng html2canvas tạo ảnh nét gấp 4 lần và tải về để in qua App Bluetooth (ZLabel)
+                        const container = document.getElementById('labelPreviewContainer');
+                        const canvas = await html2canvas(container, {
+                            scale: 4, 
+                            useCORS: true,
+                            logging: false
+                        });
+                        const imgData = canvas.toDataURL('image/png');
                         const a = document.createElement('a');
                         a.href = imgData;
-                        a.download = `label_${this.currentPrintId}.png`;
+                        a.download = `label_${this.currentPrintId}_${Date.now()}.png`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
-                        UI.showToast("Đã lưu ảnh nhãn. Bạn có thể mở ảnh để in qua App.", "info");
+                        UI.showToast("Đã lưu ảnh nhãn. Hãy mở App máy in để chọn ảnh in.", "info");
                     }
                     this.closePrintPreview();
                 } catch (error) {
-                    console.error("Lỗi tạo ảnh in:", error);
-                    UI.showToast("Không thể tạo bản in, vui lòng thử lại.", "error");
+                    console.error("Lỗi tạo bản in:", error);
+                    UI.showToast("Không thể thực hiện lệnh in.", "error");
                 }
             }
         }
