@@ -1349,7 +1349,7 @@
                     const d = new Date(p.purchaseDate);
                     dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
                 }
-
+// Cấu trúc HTML dùng Flexbox co giãn chữ (cấu hình responsive mm)
                 this.currentPrintHtml = `
                     <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1.5mm 2mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1;">
                         
@@ -1367,31 +1367,30 @@
                         </div>
                         
                         <!-- Các dòng thông tin dùng lưới linh hoạt -->
-                        <div style="font-size: 6.5pt; display: flex; flex-direction: column; gap: 0.5mm; flex-grow: 1;">
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <div style="font-size: 6.5pt; display: flex; flex-direction: column; gap: 0.5mm; flex-grow: 1; word-break: break-word;">
+                            <div>
                                 <span>Tên sản phẩm: </span><span>${p.name || ''}</span>
                             </div>
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <div>
                                 <span>Hãng sản xuất: </span><span>${brandObj ? brandObj.name : ''}</span>
                             </div>
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <div>
                                 <span>Giá tiền: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
                             </div>
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <div>
                                 <span>SKU: </span><span>${p.sku || ''}</span>
                             </div>
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <div>
                                 <span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span>
                             </div>
                         </div>
 
                         <!-- Dòng chân trang (Phân loại) -->
-                        <div style="text-align: right; margin-top: auto; font-size: 6.5pt; font-weight: bold;">
+                        <div style="text-align: right; margin-top: auto; font-size: 6.5pt; font-weight: bold; word-break: break-word;">
                             <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
                         </div>
                     </div>
                 `;
-
                 const container = document.getElementById('labelPreviewContainer');
                 container.innerHTML = this.currentPrintHtml;
                 container.style.width = 'fit-content';
