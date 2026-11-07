@@ -482,7 +482,7 @@
             </div>
             <div class="p-6 bg-gray-200 flex justify-center items-center overflow-auto rounded-b-xl" style="min-height: 250px;">
                 <!-- Vùng chứa bản preview ảo -->
-                <div id="labelPreviewContainer" style="background: white; border-radius: 4px; padding: 2mm; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform-origin: top center; transform: scale(1.5);">
+                <div id="labelPreviewContainer" style="background: white; border-radius: 4px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform-origin: top center; transform: scale(1.5);">
                     <!-- Nội dung label sẽ chèn vào đây -->
                 </div>
             </div>
@@ -951,7 +951,7 @@
                 qInput.value = '';
 
                 document.getElementById('productPurchasePlace').value = '';
-                document.getElementById('saveNewPlaceCheckbox').checked = false;
+                document.getElementById('productHasBox').checked = false;
 
                 if (id) {
                     document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
@@ -1022,9 +1022,9 @@
                 }
 
                 const purchasePlace = document.getElementById('productPurchasePlace').value.trim();
-                const isSavePlace = document.getElementById('saveNewPlaceCheckbox').checked;
+                const hasBox = document.getElementById('productHasBox').checked;
 
-                if (isSavePlace && purchasePlace) {
+                if (purchasePlace) {
                     const safeKey = this.cleanKey(purchasePlace);
                     if (!this.locations.some(l => l.id === safeKey)) {
                         await set(ref(this.db, 'locations/' + safeKey), { name: purchasePlace, id: safeKey });
@@ -1046,7 +1046,7 @@
                     price: parseFloat(document.getElementById('productPrice').value),
                     purchaseDate: document.getElementById('productPurchaseDate').value,
                     purchasePlace: purchasePlace,
-                    hasBox: document.getElementById('productHasBox').checked,
+                    hasBox: hasBox,
                     trackQuantity,
                     quantity: finalQty,
                     updatedAt: new Date().toISOString()
@@ -1350,29 +1350,57 @@
                     dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
                 }
 
-                // Căn chỉnh CSS HTML nội dung in giống ảnh mẫu
+                // Cấu trúc HTML dùng Flexbox co giãn chữ (cấu hình responsive mm)
                 this.currentPrintHtml = `
-                    <div style="font-family: Arial, sans-serif; color: #000; box-sizing: border-box; display: flex; flex-direction: column; width: 100%; height: 100%; padding: 2mm; overflow: hidden; background: #fff;">
-                        <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 4px;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-right: 6px;">
+                    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; box-sizing: border-box; display: flex; flex-direction: column; width: 100%; height: 100%; padding: 4%; background: #fff; line-height: 1.35;">
+                        
+                        <!-- Header có logo -->
+                        <div style="display: flex; align-items: center; border-bottom: 1.5px solid #000; padding-bottom: 2%; margin-bottom: 2%;">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="height: 14vh; margin-right: 4%;">
                                 <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
                             </svg>
-                            <div style="font-size: 11px; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
+                            <div style="font-size: 13vh; font-weight: bold; flex-grow: 1;">Bộ phận Quản lý sản phẩm</div>
                         </div>
-                        <div style="font-size: 10.5px; font-weight: bold; margin-bottom: 3px;">Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}</div>
-                        <div style="font-size: 10px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tên sản phẩm: ${p.name || ''}</div>
-                        <div style="font-size: 10px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hãng sản xuất: ${brandObj ? brandObj.name : ''}</div>
-                        <div style="font-size: 10px; margin-bottom: 2px;">Giá tiền: ${UI.formatCurrency(p.price || 0)}</div>
-                        <div style="font-size: 10px; margin-bottom: 2px;">Ngày mua: ${dateStr}</div>
-                        <div style="font-size: 10px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nơi mua: ${placeObj ? placeObj.name : (p.purchasePlace || '')}</div>
-                        <div style="text-align: right; margin-top: auto; font-size: 10px;">Phân loại: ${catObj ? catObj.name : ''}</div>
+                        
+                        <!-- Tiêu đề Thông tin -->
+                        <div style="font-size: 12vh; font-weight: bold; margin-bottom: 2%;">
+                            Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
+                        </div>
+                        
+                        <!-- Các dòng thông tin dùng lưới linh hoạt -->
+                        <div style="font-size: 11vh; display: flex; flex-direction: column; gap: 1%; flex-grow: 1; justify-content: flex-start; overflow:hidden;">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <span>Tên sản phẩm: </span><span style="font-weight: 500;">${p.name || ''}</span>
+                            </div>
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <span>Hãng sản xuất: </span><span style="font-weight: 500;">${brandObj ? brandObj.name : ''}</span>
+                            </div>
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <span>Giá tiền: </span><span style="font-weight: 500;">${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
+                            </div>
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <span>Ngày mua: </span><span style="font-weight: 500;">${dateStr}</span>
+                            </div>
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <span>Nơi mua: </span><span style="font-weight: 500;">${placeObj ? placeObj.name : (p.purchasePlace || '')}</span>
+                            </div>
+                        </div>
+
+                        <!-- Dòng chân trang (Phân loại) -->
+                        <div style="text-align: right; margin-top: auto; font-size: 11.5vh; padding-top: 1%;">
+                            <span>Phân loại: </span><span style="font-weight: 500;">${catObj ? catObj.name : ''}</span>
+                        </div>
                     </div>
                 `;
 
                 const container = document.getElementById('labelPreviewContainer');
                 container.style.width = `${this.currentPrintWidth}mm`;
                 container.style.height = `${this.currentPrintHeight}mm`;
-                container.innerHTML = this.currentPrintHtml;
+                
+                // Đổ vào HTML Preview, nhưng để xem mượt mà trên trình duyệt, chữ 'vh' cần convert qua 'cqh' (Container Queries)
+                const previewHtml = this.currentPrintHtml.replace(/vh/g, 'cqh');
+                container.style.containerType = "size";
+                container.innerHTML = previewHtml;
 
                 this.closePrintSettings();
                 
@@ -1408,6 +1436,7 @@
 
                 const doc = iframe.contentWindow.document;
                 doc.open();
+                // Trang in thật thiết lập Landscape tự động xoay ngang máy in
                 doc.write(`
                     <!DOCTYPE html>
                     <html>
@@ -1415,7 +1444,7 @@
                         <title>In Nhãn</title>
                         <style>
                             @page {
-                                size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm;
+                                size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
                                 margin: 0;
                             }
                             body {
