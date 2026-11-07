@@ -166,8 +166,8 @@
                                 <thead>
                                     <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
                                         <th class="px-6 py-4 font-medium">Mã SP</th>
-                                        <th class="px-6 py-4 font-medium">Phân loại</th>
-                                        <th class="px-6 py-4 font-medium min-w-[300px]">Tên sản phẩm</th>
+                                        <th class="px-6 py-4 font-medium">Thông tin</th>
+                                        <th class="px-6 py-4 font-medium min-w-[250px]">Tên sản phẩm</th>
                                         <th class="px-6 py-4 font-medium text-right">Số lượng</th>
                                         <th class="px-6 py-4 font-medium text-right min-w-[120px]">Đơn giá</th>
                                         <th class="px-6 py-4 font-medium text-right w-24">Thao tác</th>
@@ -190,9 +190,9 @@
                     </div>
                 </div>
 
-                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands) -->
+                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands, Locations) -->
                 <div id="view-categories" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         
                         <!-- Categories Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -229,6 +229,25 @@
                                         </tr>
                                     </thead>
                                     <tbody id="brandsTableBody" class="divide-y divide-gray-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Locations Table -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-location-dot text-emerald-500 mr-2"></i> Nơi mua</h3>
+                                <button onclick="app.openConfigModal('location')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="overflow-y-auto max-h-96">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-white sticky top-0 shadow-sm z-10">
+                                        <tr class="text-gray-500 text-sm border-b border-gray-100">
+                                            <th class="px-6 py-3 font-medium">Tên nơi mua</th>
+                                            <th class="px-6 py-3 font-medium text-right w-24">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="locationsTableBody" class="divide-y divide-gray-100"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -309,6 +328,12 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nơi mua</label>
+                            <select id="productPurchasePlace" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
+                                <option value="">Chọn nơi mua...</option>
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mua</label>
                             <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         </div>
@@ -335,7 +360,7 @@
         </div>
     </div>
 
-    <!-- Modal: Thiết lập chung (Thêm Phân loại / Hãng) -->
+    <!-- Modal: Thiết lập chung (Thêm/Sửa Phân loại / Hãng / Nơi mua) -->
     <div id="configModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="configModalContent">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -346,10 +371,12 @@
             </div>
             <form id="configForm" class="p-6 space-y-4" onsubmit="return false;">
                 <input type="hidden" id="configType">
+                <input type="hidden" id="configId">
+                <input type="hidden" id="configOldName">
                 
                 <div id="configPrefixContainer" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã viết tắt (2 Ký tự) *</label>
-                    <input type="text" id="configPrefix" maxlength="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="VD: DT">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã viết tắt (2 KT tự động)</label>
+                    <input type="text" id="configPrefix" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-100 rounded-lg focus:outline-none text-gray-500 uppercase font-bold cursor-not-allowed">
                 </div>
 
                 <div>
@@ -410,7 +437,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, remove, set, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
         
         const UI = {
             formatCurrency: (amount) => {
@@ -444,6 +471,7 @@
                 this.products = [];
                 this.categories = [];
                 this.brands = [];
+                this.locations = []; // Thêm array locations
                 this.searchQuery = '';
                 this.currentView = 'dashboard';
                 
@@ -451,6 +479,7 @@
                 this.productsRef = null;
                 this.categoriesRef = null;
                 this.brandsRef = null;
+                this.locationsRef = null;
                 
                 this.deleteCandidateId = null;
                 this.deleteCandidateType = null;
@@ -465,9 +494,11 @@
                     const app = initializeApp(firebaseConfig);
                     this.db = getDatabase(app);
                     
+                    // Cấu trúc phẳng root
                     this.productsRef = ref(this.db, 'products');
                     this.categoriesRef = ref(this.db, 'categories');
                     this.brandsRef = ref(this.db, 'brands');
+                    this.locationsRef = ref(this.db, 'locations');
                     
                     this.listenToData();
                 } catch (error) { 
@@ -478,10 +509,10 @@
             }
 
             listenToData() {
-                let dataLoaded = { products: false, categories: false, brands: false };
+                let dataLoaded = { products: false, categories: false, brands: false, locations: false };
                 
                 const checkAllLoaded = () => {
-                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands) {
+                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands && dataLoaded.locations) {
                         document.getElementById('loading-screen').style.display = 'none';
                         document.getElementById('app-container').style.display = 'flex';
                         document.getElementById('app-container').classList.remove('hidden');
@@ -524,6 +555,18 @@
                     dataLoaded.brands = true;
                     checkAllLoaded();
                 });
+
+                onValue(this.locationsRef, (snapshot) => {
+                    this.locations = [];
+                    snapshot.forEach((child) => {
+                        this.locations.push({ id: child.key, ...child.val() });
+                    });
+                    this.populateDropdowns();
+                    if(this.currentView === 'categories') this.renderCategories();
+                    
+                    dataLoaded.locations = true;
+                    checkAllLoaded();
+                });
             }
 
             bindEvents() {
@@ -558,6 +601,7 @@
                         if(oldProduct.model && !document.getElementById('productModel').value) document.getElementById('productModel').value = oldProduct.model;
                         if(oldProduct.color && !document.getElementById('productColor').value) document.getElementById('productColor').value = oldProduct.color;
                         if(oldProduct.price && !document.getElementById('productPrice').value) document.getElementById('productPrice').value = oldProduct.price;
+                        if(oldProduct.purchasePlace && !document.getElementById('productPurchasePlace').value) document.getElementById('productPurchasePlace').value = oldProduct.purchasePlace;
                         
                         UI.showToast("Đã điền thông tin từ lần nhập trước.");
                     }
@@ -591,6 +635,17 @@
                 for(let i = 0; i < length; i++) code += Math.floor(Math.random() * 10).toString();
                 return code;
             }
+
+            generateCategoryPrefix() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                let prefix;
+                let isDuplicate = true;
+                while (isDuplicate) {
+                    prefix = chars.charAt(Math.floor(Math.random() * chars.length)) + chars.charAt(Math.floor(Math.random() * chars.length));
+                    isDuplicate = this.categories.some(c => c.prefix === prefix);
+                }
+                return prefix;
+            }
             
             cleanKey(str) {
                 return str.replace(/[.#$[\]\s]/g, '_');
@@ -599,6 +654,7 @@
             populateDropdowns() {
                 const catSelect = document.getElementById('productCategory');
                 const brandSelect = document.getElementById('productBrand');
+                const placeSelect = document.getElementById('productPurchasePlace');
 
                 const currentCat = catSelect.value;
                 catSelect.innerHTML = '<option value="" disabled selected>Chọn...</option>';
@@ -613,6 +669,13 @@
                     if(b.name) brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
                 });
                 brandSelect.value = currentBrand || '';
+
+                const currentPlace = placeSelect.value;
+                placeSelect.innerHTML = '<option value="">Chọn nơi mua...</option>';
+                this.locations.forEach(l => {
+                    if(l.name) placeSelect.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+                });
+                placeSelect.value = currentPlace || '';
             }
 
             switchView(viewName) {
@@ -649,6 +712,7 @@
             renderCategories() {
                 const catTbody = document.getElementById('categoriesTableBody');
                 const brandTbody = document.getElementById('brandsTableBody');
+                const locTbody = document.getElementById('locationsTableBody');
                 
                 catTbody.innerHTML = '';
                 this.categories.forEach(c => {
@@ -659,6 +723,7 @@
                             <td class="px-6 py-3 text-gray-700">${c.name}</td>
                             <td class="px-6 py-3 text-right">
                                 <div class="flex justify-end gap-2">
+                                    <button onclick="app.openConfigModal('category', '${c.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
                                     <button onclick="app.requestDelete('${c.id}', 'category')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                                 </div>
                             </td>
@@ -673,7 +738,23 @@
                             <td class="px-6 py-3 text-gray-700">${b.name}</td>
                             <td class="px-6 py-3 text-right">
                                 <div class="flex justify-end gap-2">
+                                    <button onclick="app.openConfigModal('brand', '${b.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
                                     <button onclick="app.requestDelete('${b.id}', 'brand')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
+
+                locTbody.innerHTML = '';
+                this.locations.forEach(l => {
+                    if(!l.name) return;
+                    locTbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 border-b border-gray-100">
+                            <td class="px-6 py-3 text-gray-700">${l.name}</td>
+                            <td class="px-6 py-3 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <button onclick="app.openConfigModal('location', '${l.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                    <button onclick="app.requestDelete('${l.id}', 'location')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
                                 </div>
                             </td>
                         </tr>`;
@@ -740,6 +821,7 @@
                         const qty = parseInt(p.quantity) || 1;
                         const catObj = this.categories.find(c => c.id === p.category);
                         const brandObj = this.brands.find(b => b.id === p.brand);
+                        const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                         
                         const catName = catObj ? catObj.name : '';
                         const brandUI = brandObj ? `<span class="text-xs text-purple-600 font-semibold inline-block bg-purple-50 px-2 py-0.5 rounded border border-purple-100 ml-2"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
@@ -751,6 +833,7 @@
                         let metaInfo = [];
                         if(p.model) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`);
                         if(p.color) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-palette"></i> ${p.color}</span>`);
+                        if(placeObj && placeObj.name) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fa-solid fa-location-dot"></i> ${placeObj.name}</span>`);
                         
                         const metaUI = metaInfo.length > 0 ? `<div class="text-[11px] mt-2 flex flex-wrap gap-2">${metaInfo.join('')}</div>` : '';
                         const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1">S/N: ${p.serial}</div>` : '';
@@ -811,6 +894,7 @@
                         document.getElementById('productColor').value = p.color || '';
                         document.getElementById('productPrice').value = p.price || 0;
                         document.getElementById('productPurchaseDate').value = p.purchaseDate || '';
+                        document.getElementById('productPurchasePlace').value = p.purchasePlace || '';
                         
                         const isTracked = p.trackQuantity !== false;
                         tQCheckbox.checked = isTracked;
@@ -875,6 +959,7 @@
                     color: document.getElementById('productColor').value.trim(),
                     price: parseFloat(document.getElementById('productPrice').value),
                     purchaseDate: document.getElementById('productPurchaseDate').value,
+                    purchasePlace: document.getElementById('productPurchasePlace').value,
                     trackQuantity,
                     quantity: finalQty,
                     updatedAt: new Date().toISOString()
@@ -906,18 +991,48 @@
                 }
             }
 
-            openConfigModal(type) {
+            openConfigModal(type, id = null) {
                 document.getElementById('configForm').reset();
                 document.getElementById('configType').value = type;
-                if(type === 'category') {
-                    document.getElementById('configModalTitle').innerText = 'Thêm Phân Loại';
+                document.getElementById('configId').value = id || '';
+                
+                const title = id ? 'Sửa' : 'Thêm';
+                
+                if (type === 'category') {
+                    document.getElementById('configModalTitle').innerText = `${title} Phân Loại`;
                     document.getElementById('configPrefixContainer').classList.remove('hidden');
-                    document.getElementById('configPrefix').setAttribute('required', 'true');
-                } else if(type === 'brand') {
-                    document.getElementById('configModalTitle').innerText = 'Thêm Hãng Sản Xuất';
+                    
+                    if (id) {
+                        const cat = this.categories.find(c => c.id === id);
+                        document.getElementById('configName').value = cat.name || '';
+                        document.getElementById('configPrefix').value = cat.prefix || '';
+                        document.getElementById('configOldName').value = cat.name || '';
+                    } else {
+                        document.getElementById('configPrefix').value = this.generateCategoryPrefix();
+                        document.getElementById('configOldName').value = '';
+                    }
+                } else if (type === 'brand') {
+                    document.getElementById('configModalTitle').innerText = `${title} Hãng Sản Xuất`;
                     document.getElementById('configPrefixContainer').classList.add('hidden');
-                    document.getElementById('configPrefix').removeAttribute('required');
+                    if (id) {
+                        const brand = this.brands.find(b => b.id === id);
+                        document.getElementById('configName').value = brand.name || '';
+                        document.getElementById('configOldName').value = brand.name || '';
+                    } else {
+                        document.getElementById('configOldName').value = '';
+                    }
+                } else if (type === 'location') {
+                    document.getElementById('configModalTitle').innerText = `${title} Nơi mua`;
+                    document.getElementById('configPrefixContainer').classList.add('hidden');
+                    if (id) {
+                        const loc = this.locations.find(l => l.id === id);
+                        document.getElementById('configName').value = loc.name || '';
+                        document.getElementById('configOldName').value = loc.name || '';
+                    } else {
+                        document.getElementById('configOldName').value = '';
+                    }
                 }
+
                 const m = document.getElementById('configModal'); const c = document.getElementById('configModalContent');
                 m.classList.remove('hidden'); void m.offsetWidth;
                 m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
@@ -934,24 +1049,59 @@
                 if(!form.checkValidity()) { form.reportValidity(); return; }
 
                 const type = document.getElementById('configType').value;
+                const oldId = document.getElementById('configId').value;
+                const oldName = document.getElementById('configOldName').value;
                 const name = document.getElementById('configName').value.trim();
-                const prefix = document.getElementById('configPrefix').value.trim().toUpperCase();
                 
                 try {
-                    const safeKey = this.cleanKey(name); 
+                    const updates = {};
                     
                     if(type === 'category') {
-                        if(this.categories.some(c => c.prefix === prefix || c.id === safeKey)) { 
-                            UI.showToast("Phân loại hoặc Mã viết tắt đã tồn tại!", "error"); return; 
+                        const prefix = document.getElementById('configPrefix').value.trim().toUpperCase();
+                        // Dùng prefix làm key để không đổi mã khi đổi tên
+                        const safeKey = prefix;
+                        
+                        if(!oldId && this.categories.some(c => c.id === safeKey)) { 
+                            UI.showToast("Mã phân loại đã tồn tại!", "error"); return; 
                         }
                         await set(ref(this.db, 'categories/' + safeKey), { name, prefix, id: safeKey });
+                        
                     } else if (type === 'brand') {
-                        if(this.brands.some(b => b.id === safeKey)) {
+                        const safeKey = this.cleanKey(name); 
+                        if (!oldId && this.brands.some(b => b.id === safeKey)) {
                             UI.showToast("Hãng sản xuất này đã tồn tại!", "error"); return; 
                         }
-                        await set(ref(this.db, 'brands/' + safeKey), { name, id: safeKey });
+                        
+                        if (oldId && oldId !== safeKey) {
+                            // Update cascading for renamed brand
+                            this.products.forEach(p => {
+                                if(p.brand === oldId) updates[`products/${p.id}/brand`] = safeKey;
+                            });
+                            updates[`brands/${safeKey}`] = { name, id: safeKey };
+                            updates[`brands/${oldId}`] = null;
+                            await update(ref(this.db), updates);
+                        } else {
+                            await set(ref(this.db, 'brands/' + safeKey), { name, id: safeKey });
+                        }
+                    } else if (type === 'location') {
+                        const safeKey = this.cleanKey(name); 
+                        if (!oldId && this.locations.some(l => l.id === safeKey)) {
+                            UI.showToast("Nơi mua này đã tồn tại!", "error"); return; 
+                        }
+                        
+                        if (oldId && oldId !== safeKey) {
+                            // Update cascading for renamed location
+                            this.products.forEach(p => {
+                                if(p.purchasePlace === oldId) updates[`products/${p.id}/purchasePlace`] = safeKey;
+                            });
+                            updates[`locations/${safeKey}`] = { name, id: safeKey };
+                            updates[`locations/${oldId}`] = null;
+                            await update(ref(this.db), updates);
+                        } else {
+                            await set(ref(this.db, 'locations/' + safeKey), { name, id: safeKey });
+                        }
                     }
-                    UI.showToast("Thêm mới thành công!");
+                    UI.showToast(oldId ? "Cập nhật thành công!" : "Thêm mới thành công!");
                     this.closeConfigModal();
                 } catch (error) { UI.showToast("Lỗi khi lưu!", "error"); }
             }
@@ -977,11 +1127,17 @@
                     let path = 'products';
                     if(this.deleteCandidateType === 'category') path = 'categories';
                     if(this.deleteCandidateType === 'brand') path = 'brands';
+                    if(this.deleteCandidateType === 'location') path = 'locations';
+                    
                     await remove(ref(this.db, path + '/' + this.deleteCandidateId));
                     UI.showToast("Đã xóa thành công");
                     this.closeConfirmModal();
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
+            }
+
+            logout() {
+                window.location.reload();
             }
 
             triggerQuickAdjust() {
