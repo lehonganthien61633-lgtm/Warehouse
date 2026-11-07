@@ -190,9 +190,9 @@
                     </div>
                 </div>
 
-                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands, Locations) -->
+                <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands, Locations, Seal Locations) -->
                 <div id="view-categories" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                         
                         <!-- Categories Table -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -248,6 +248,25 @@
                                         </tr>
                                     </thead>
                                     <tbody id="locationsTableBody" class="divide-y divide-gray-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Seal Locations Table -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800"><i class="fa-solid fa-shield-halved text-orange-500 mr-2"></i> VT Niêm phong</h3>
+                                <button onclick="app.openConfigModal('sealLocation')" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg font-medium shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="overflow-y-auto max-h-96">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-white sticky top-0 shadow-sm z-10">
+                                        <tr class="text-gray-500 text-sm border-b border-gray-100">
+                                            <th class="px-6 py-3 font-medium">Vị trí</th>
+                                            <th class="px-6 py-3 font-medium text-right w-24">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sealLocationsTableBody" class="divide-y divide-gray-100"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -445,7 +464,19 @@
                 </button>
             </div>
             <div class="p-6 space-y-4 text-left">
-                <label class="block text-sm font-medium text-gray-700">Kích thước giấy in</label>
+                <label class="block text-sm font-medium text-gray-700">Loại nhãn in</label>
+                <div class="flex gap-4 mb-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printType" value="info" checked onchange="app.togglePrintType()" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                        <span class="text-sm font-medium">Thông tin SP</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="printType" value="seal" onchange="app.togglePrintType()" class="w-4 h-4 text-orange-600 focus:ring-orange-500 border-gray-300">
+                        <span class="text-sm font-medium">Niêm phong</span>
+                    </label>
+                </div>
+
+                <label class="block text-sm font-medium text-gray-700 pt-2 border-t border-gray-100">Kích thước giấy in</label>
                 <div class="flex gap-4 mb-4">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="printSize" value="40x30" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
@@ -457,10 +488,20 @@
                     </label>
                 </div>
                 
-                <label class="flex items-center gap-2 mt-2 text-sm text-gray-700 cursor-pointer">
-                    <input type="checkbox" id="printBoxLabel" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                    In nhãn cho vỏ hộp (Hiển thị "Vỏ hộp")
-                </label>
+                <!-- Cấu hình Nhãn Thông tin -->
+                <div id="printInfoConfig">
+                    <label class="flex items-center gap-2 mt-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="printBoxLabel" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        In nhãn cho vỏ hộp (Hiển thị "Vỏ hộp")
+                    </label>
+                </div>
+
+                <!-- Cấu hình Nhãn Niêm phong -->
+                <div id="printSealConfig" class="hidden space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Vị trí niêm phong</label>
+                    <input type="text" id="printSealLocation" list="sealLocationsList" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" placeholder="Nhập hoặc chọn vị trí (VD: Đáy hộp, Ốc lề)...">
+                    <datalist id="sealLocationsList"></datalist>
+                </div>
             </div>
             <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 rounded-b-xl">
                 <button type="button" onclick="app.closePrintSettings()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Hủy</button>
@@ -570,6 +611,34 @@
                     this.categoriesRef = ref(this.db, 'categories');
                     this.brandsRef = ref(this.db, 'brands');
                     this.locationsRef = ref(this.db, 'locations');
+                this.sealLocationsRef = ref(this.db, 'sealLocations');
+                
+                this.deleteCandidateId = null;
+                this.deleteCandidateType = null;
+
+                // Các biến lưu trạng thái in
+                this.currentPrintId = null;
+                this.currentPrintWidth = 50;
+                this.currentPrintHeight = 30;
+                this.currentPrintIsBox = false;
+                this.currentPrintHtml = '';
+                this.sealLocations = [];
+                
+                this.initApp();
+                this.bindEvents();
+            }
+
+            async initApp() {
+                try {
+                    const firebaseConfig = { databaseURL: "https://warehouse-a9d5c-default-rtdb.asia-southeast1.firebasedatabase.app/" };
+                    const app = initializeApp(firebaseConfig);
+                    this.db = getDatabase(app);
+                    
+                    this.productsRef = ref(this.db, 'products');
+                    this.categoriesRef = ref(this.db, 'categories');
+                    this.brandsRef = ref(this.db, 'brands');
+                    this.locationsRef = ref(this.db, 'locations');
+                    this.sealLocationsRef = ref(this.db, 'sealLocations');
                     
                     this.listenToData();
                 } catch (error) { 
@@ -580,10 +649,10 @@
             }
 
             listenToData() {
-                let dataLoaded = { products: false, categories: false, brands: false, locations: false };
+                let dataLoaded = { products: false, categories: false, brands: false, locations: false, sealLocations: false };
                 
                 const checkAllLoaded = () => {
-                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands && dataLoaded.locations) {
+                    if (dataLoaded.products && dataLoaded.categories && dataLoaded.brands && dataLoaded.locations && dataLoaded.sealLocations) {
                         document.getElementById('loading-screen').style.display = 'none';
                         document.getElementById('app-container').style.display = 'flex';
                         document.getElementById('app-container').classList.remove('hidden');
@@ -598,45 +667,39 @@
                     if(document.getElementById('tableLoading')) document.getElementById('tableLoading').classList.add('hidden');
                     
                     this.render();
-                    
-                    dataLoaded.products = true;
-                    checkAllLoaded();
+                    dataLoaded.products = true; checkAllLoaded();
                 });
 
                 onValue(this.categoriesRef, (snapshot) => {
                     this.categories = [];
-                    snapshot.forEach((child) => {
-                        this.categories.push({ id: child.key, ...child.val() });
-                    });
+                    snapshot.forEach((child) => { this.categories.push({ id: child.key, ...child.val() }); });
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    
-                    dataLoaded.categories = true;
-                    checkAllLoaded();
+                    dataLoaded.categories = true; checkAllLoaded();
                 });
 
                 onValue(this.brandsRef, (snapshot) => {
                     this.brands = [];
-                    snapshot.forEach((child) => {
-                        this.brands.push({ id: child.key, ...child.val() });
-                    });
+                    snapshot.forEach((child) => { this.brands.push({ id: child.key, ...child.val() }); });
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    
-                    dataLoaded.brands = true;
-                    checkAllLoaded();
+                    dataLoaded.brands = true; checkAllLoaded();
                 });
 
                 onValue(this.locationsRef, (snapshot) => {
                     this.locations = [];
-                    snapshot.forEach((child) => {
-                        this.locations.push({ id: child.key, ...child.val() });
-                    });
+                    snapshot.forEach((child) => { this.locations.push({ id: child.key, ...child.val() }); });
                     this.populateDropdowns();
                     if(this.currentView === 'categories') this.renderCategories();
-                    
-                    dataLoaded.locations = true;
-                    checkAllLoaded();
+                    dataLoaded.locations = true; checkAllLoaded();
+                });
+
+                onValue(this.sealLocationsRef, (snapshot) => {
+                    this.sealLocations = [];
+                    snapshot.forEach((child) => { this.sealLocations.push({ id: child.key, ...child.val() }); });
+                    this.populateDropdowns();
+                    if(this.currentView === 'categories') this.renderCategories();
+                    dataLoaded.sealLocations = true; checkAllLoaded();
                 });
             }
 
@@ -727,6 +790,7 @@
                 const catSelect = document.getElementById('productCategory');
                 const brandSelect = document.getElementById('productBrand');
                 const placeList = document.getElementById('placesList');
+                const sealList = document.getElementById('sealLocationsList');
 
                 const currentCat = catSelect.value;
                 catSelect.innerHTML = '<option value="" disabled selected>Chọn...</option>';
@@ -746,6 +810,13 @@
                 this.locations.forEach(l => {
                     if(l.name) placeList.innerHTML += `<option value="${l.name}"></option>`;
                 });
+
+                if(sealList) {
+                    sealList.innerHTML = '';
+                    this.sealLocations.forEach(s => {
+                        if(s.name) sealList.innerHTML += `<option value="${s.name}"></option>`;
+                    });
+                }
             }
 
             switchView(viewName) {
@@ -783,6 +854,7 @@
                 const catTbody = document.getElementById('categoriesTableBody');
                 const brandTbody = document.getElementById('brandsTableBody');
                 const locTbody = document.getElementById('locationsTableBody');
+                const sealTbody = document.getElementById('sealLocationsTableBody');
                 
                 catTbody.innerHTML = '';
                 this.categories.forEach(c => {
@@ -829,11 +901,28 @@
                             </td>
                         </tr>`;
                 });
+
+                if(sealTbody) {
+                    sealTbody.innerHTML = '';
+                    this.sealLocations.forEach(s => {
+                        if(!s.name) return;
+                        sealTbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
+                                <td class="px-6 py-3 text-gray-700">${s.name}</td>
+                                <td class="px-6 py-3 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="app.openConfigModal('sealLocation', '${s.id}')" class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-100"><i class="fa-solid fa-pen text-sm"></i></button>
+                                        <button onclick="app.requestDelete('${s.id}', 'sealLocation')" class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-100"><i class="fa-solid fa-trash text-sm"></i></button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                    });
+                }
             }
 
             renderDashboard() {
+                // (Giữ nguyên logic của renderDashboard như cũ)
                 let totalItems = 0; let totalValue = 0;
-                
                 const tbody = document.getElementById('dashboardTableBody');
                 const emptyState = document.getElementById('dashboardEmpty');
                 tbody.innerHTML = '';
@@ -844,7 +933,6 @@
                 } else {
                     tbody.parentElement.classList.remove('hidden');
                     emptyState.classList.add('hidden');
-                    
                     let lowStockCount = 0;
                     this.products.forEach(p => {
                         if(!p.name) return;
@@ -865,15 +953,14 @@
                                 <td class="px-6 py-3 border-b border-gray-50 text-sm font-bold text-right align-middle">${qtyUI}</td>
                             </tr>`;
                     });
-                    
                     document.getElementById('stat-low-stock').innerText = lowStockCount;
                 }
-
                 document.getElementById('stat-total-items').innerText = totalItems.toLocaleString('vi-VN');
                 document.getElementById('stat-total-value').innerText = UI.formatCurrency(totalValue);
             }
 
             renderProducts() {
+                // (Giữ nguyên logic của renderProducts như cũ)
                 const tbody = document.getElementById('productsTableBody');
                 const emptyState = document.getElementById('tableEmpty');
                 tbody.innerHTML = '';
@@ -938,6 +1025,7 @@
             }
 
             openModal(id = null) {
+                // (Giữ nguyên logic của openModal)
                 document.getElementById('productForm').reset();
                 document.getElementById('productId').value = '';
                 document.getElementById('productOldCode').value = '';
@@ -993,6 +1081,7 @@
             }
 
             async handleSaveProduct() {
+                // (Giữ nguyên logic của handleSaveProduct)
                 const form = document.getElementById('productForm');
                 if(!form.checkValidity()) { form.reportValidity(); return; }
 
@@ -1118,6 +1207,16 @@
                     } else {
                         document.getElementById('configOldName').value = '';
                     }
+                } else if (type === 'sealLocation') {
+                    document.getElementById('configModalTitle').innerText = `${title} VT Niêm phong`;
+                    document.getElementById('configPrefixContainer').classList.add('hidden');
+                    if (id) {
+                        const loc = this.sealLocations.find(l => l.id === id);
+                        document.getElementById('configName').value = loc.name || '';
+                        document.getElementById('configOldName').value = loc.name || '';
+                    } else {
+                        document.getElementById('configOldName').value = '';
+                    }
                 }
 
                 const m = document.getElementById('configModal'); const c = document.getElementById('configModalContent');
@@ -1157,7 +1256,6 @@
                         if (!oldId && this.brands.some(b => b.id === safeKey)) {
                             UI.showToast("Hãng sản xuất này đã tồn tại!", "error"); return; 
                         }
-                        
                         if (oldId && oldId !== safeKey) {
                             this.products.forEach(p => {
                                 if(p.brand === oldId) updates[`products/${p.id}/brand`] = safeKey;
@@ -1173,7 +1271,6 @@
                         if (!oldId && this.locations.some(l => l.id === safeKey)) {
                             UI.showToast("Nơi mua này đã tồn tại!", "error"); return; 
                         }
-                        
                         if (oldId && oldId !== safeKey) {
                             this.products.forEach(p => {
                                 if(p.purchasePlace === oldId) updates[`products/${p.id}/purchasePlace`] = safeKey;
@@ -1183,6 +1280,18 @@
                             await update(ref(this.db), updates);
                         } else {
                             await set(ref(this.db, 'locations/' + safeKey), { name, id: safeKey });
+                        }
+                    } else if (type === 'sealLocation') {
+                        const safeKey = this.cleanKey(name); 
+                        if (!oldId && this.sealLocations.some(l => l.id === safeKey)) {
+                            UI.showToast("Vị trí này đã tồn tại!", "error"); return; 
+                        }
+                        if (oldId && oldId !== safeKey) {
+                            updates[`sealLocations/${safeKey}`] = { name, id: safeKey };
+                            updates[`sealLocations/${oldId}`] = null;
+                            await update(ref(this.db), updates);
+                        } else {
+                            await set(ref(this.db, 'sealLocations/' + safeKey), { name, id: safeKey });
                         }
                     }
                     UI.showToast(oldId ? "Cập nhật thành công!" : "Thêm mới thành công!");
@@ -1212,6 +1321,7 @@
                     if(this.deleteCandidateType === 'category') path = 'categories';
                     if(this.deleteCandidateType === 'brand') path = 'brands';
                     if(this.deleteCandidateType === 'location') path = 'locations';
+                    if(this.deleteCandidateType === 'sealLocation') path = 'sealLocations';
                     
                     await remove(ref(this.db, path + '/' + this.deleteCandidateId));
                     UI.showToast("Đã xóa thành công");
@@ -1219,7 +1329,6 @@
                 } catch (error) { UI.showToast("Lỗi khi xóa", "error"); } 
                 finally { btn.disabled = false; btn.innerHTML = 'Xóa'; }
             }
-
             triggerQuickAdjust() {
                 const val = document.getElementById('quickAdjustInput').value.trim();
                 if (!val) {
@@ -1316,11 +1425,28 @@
             openPrintSettings(id) {
                 this.currentPrintId = id;
                 document.getElementById('printBoxLabel').checked = false;
+                document.getElementById('printSealLocation').value = '';
+                
+                // Mặc định chọn nhãn thông tin
+                const typeRadios = document.getElementsByName('printType');
+                typeRadios[0].checked = true;
+                this.togglePrintType();
                 
                 const m = document.getElementById('printSettingsModal'); 
                 const c = document.getElementById('printSettingsContent');
                 m.classList.remove('hidden'); void m.offsetWidth;
                 m.classList.remove('opacity-0'); c.classList.remove('scale-95'); c.classList.add('scale-100');
+            }
+
+            togglePrintType() {
+                const type = document.querySelector('input[name="printType"]:checked').value;
+                if (type === 'info') {
+                    document.getElementById('printInfoConfig').classList.remove('hidden');
+                    document.getElementById('printSealConfig').classList.add('hidden');
+                } else {
+                    document.getElementById('printInfoConfig').classList.add('hidden');
+                    document.getElementById('printSealConfig').classList.remove('hidden');
+                }
             }
 
             closePrintSettings() {
@@ -1334,70 +1460,105 @@
                 const p = this.products.find(x => x.id === this.currentPrintId);
                 if(!p) return;
 
+                const printType = document.querySelector('input[name="printType"]:checked').value;
                 const sizeVal = document.querySelector('input[name="printSize"]:checked').value;
                 const [w, h] = sizeVal.split('x');
                 this.currentPrintWidth = parseInt(w);
                 this.currentPrintHeight = parseInt(h);
-                this.currentPrintIsBox = document.getElementById('printBoxLabel').checked;
-
-                const catObj = this.categories.find(c => c.id === p.category);
-                const brandObj = this.brands.find(b => b.id === p.brand);
-                const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                 
-                let dateStr = '';
-                if (p.purchaseDate) {
-                    const d = new Date(p.purchaseDate);
-                    dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-                }
-// Cấu trúc HTML dùng Flexbox co giãn chữ (cấu hình responsive mm)
-                this.currentPrintHtml = `
-                    <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
-                        
-                        <!-- Header có logo -->
-                        <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm; justify-content: flex-start;">
-                            <svg viewBox="0 0 24 24" fill="currentColor" style="height: 3.5mm; width: 3.5mm; flex-shrink: 0; margin-right: 1mm;">
-                                <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
-                            </svg>
-                            <div style="font-size: 7pt; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
-                        </div>
-                        
-                        <!-- Tiêu đề Thông tin -->
-                        <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
-                            Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
-                        </div>
-                        
-                        <!-- Các dòng thông tin dùng lưới linh hoạt -->
-                        <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal;">
-                            <div>
-                                <span>Tên sản phẩm: </span><span>${p.name || ''}</span>
+                if (printType === 'info') {
+                    this.currentPrintIsBox = document.getElementById('printBoxLabel').checked;
+                    
+                    const catObj = this.categories.find(c => c.id === p.category);
+                    const brandObj = this.brands.find(b => b.id === p.brand);
+                    const placeObj = this.locations.find(l => l.id === p.purchasePlace);
+                    
+                    // Cấu trúc HTML Nhãn Thông tin
+                    this.currentPrintHtml = `
+                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
+                            
+                            <!-- Header có logo -->
+                            <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm; justify-content: flex-start;">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="height: 3.5mm; width: 3.5mm; flex-shrink: 0; margin-right: 1mm;">
+                                    <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
+                                </svg>
+                                <div style="font-size: 7pt; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
                             </div>
-                            <div>
-                                <span>Hãng sản xuất: </span><span>${brandObj ? brandObj.name : ''}</span>
+                            
+                            <!-- Tiêu đề Thông tin -->
+                            <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
+                                Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                             </div>
-                            <div>
-                                <span>Giá tiền: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
+                            
+                            <!-- Các dòng thông tin dùng lưới linh hoạt -->
+                            <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal;">
+                                <div>
+                                    <span>Tên sản phẩm: </span><span>${p.name || ''}</span>
+                                </div>
+                                <div>
+                                    <span>Hãng sản xuất: </span><span>${brandObj ? brandObj.name : ''}</span>
+                                </div>
+                                <div>
+                                    <span>Giá tiền: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span>
+                                </div>
+                                <div>
+                                    <span>SKU: </span><span>${p.sku || ''}</span>
+                                </div>
+                                <div>
+                                    <span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span>
+                                </div>
                             </div>
-                            <div>
-                                <span>SKU: </span><span>${p.sku || ''}</span>
-                            </div>
-                            <div>
-                                <span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span>
-                            </div>
-                        </div>
 
-                        <!-- Dòng chân trang (Phân loại) -->
-                        <div style="text-align: left; margin-top: auto; font-size: 6pt; font-weight: bold; border-top: 1px dashed #000; padding-top: 0.5mm;">
-                            <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
+                            <!-- Dòng chân trang (Phân loại) -->
+                            <div style="text-align: left; margin-top: auto; font-size: 6pt; font-weight: bold; border-top: 1px dashed #000; padding-top: 0.5mm;">
+                                <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else if (printType === 'seal') {
+                    const sealLoc = document.getElementById('printSealLocation').value.trim();
+                    if (!sealLoc) {
+                        UI.showToast("Vui lòng nhập vị trí niêm phong!", "error");
+                        return;
+                    }
+                    
+                    // Tự động ghi dữ liệu vào thiết lập nếu chưa có
+                    const safeKey = this.cleanKey(sealLoc);
+                    if (!this.sealLocations.some(l => l.id === safeKey)) {
+                        set(ref(this.db, 'sealLocations/' + safeKey), { name: sealLoc, id: safeKey });
+                    }
+
+                    // Format thời gian hiện tại
+                    const now = new Date();
+                    const dtStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}-${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+
+                    // Cấu trúc HTML Nhãn Niêm phong
+                    this.currentPrintHtml = `
+                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.2; border: 1.5px solid #000;">
+                            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1.5mm; background: #000; color: #fff; padding: 0.8mm; border-radius: 2px;">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="height: 4mm; width: 4mm; flex-shrink: 0; margin-right: 1mm;">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9l11.21 11.21C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/>
+                                </svg>
+                                <div style="font-size: 8pt; font-weight: bold; letter-spacing: 0.5px;">CẤM GỠ - NIÊM PHONG</div>
+                            </div>
+                            
+                            <div style="font-size: 7.5pt; text-align: center; font-weight: 900; margin-bottom: 1.5mm;">NHÃN NIÊM PHONG</div>
+                            
+                            <div style="font-size: 7pt; display: flex; flex-direction: column; gap: 0.8mm; flex-grow: 1; word-break: break-word; white-space: normal; text-align: left; padding: 0 0.5mm;">
+                                <div><span style="font-weight:bold">SKU:</span> ${p.sku || 'N/A'}</div>
+                                <div><span style="font-weight:bold">Vị trí:</span> ${sealLoc}</div>
+                                <div style="font-size: 6pt; margin-top: auto; text-align: center; border-top: 1px dashed #000; padding-top: 1mm; font-weight: bold;">
+                                    ${dtStr}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
                 const container = document.getElementById('labelPreviewContainer');
                 container.innerHTML = this.currentPrintHtml;
                 container.style.width = 'fit-content';
                 container.style.margin = '0 auto';
-
                 this.closePrintSettings();
-                
                 setTimeout(() => {
                     const m = document.getElementById('printPreviewModal'); 
                     const c = document.getElementById('printPreviewContent');
