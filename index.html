@@ -166,8 +166,8 @@
                                 <thead>
                                     <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
                                         <th class="px-6 py-4 font-medium">Mã SP</th>
-                                        <th class="px-6 py-4 font-medium">Thông tin</th>
-                                        <th class="px-6 py-4 font-medium min-w-[250px]">Tên sản phẩm</th>
+                                        <th class="px-6 py-4 font-medium">Phân loại</th>
+                                        <th class="px-6 py-4 font-medium min-w-[300px]">Tên sản phẩm</th>
                                         <th class="px-6 py-4 font-medium text-right">Số lượng</th>
                                         <th class="px-6 py-4 font-medium text-right min-w-[120px]">Đơn giá</th>
                                         <th class="px-6 py-4 font-medium text-right w-24">Thao tác</th>
@@ -327,13 +327,16 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
+                        <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nơi mua</label>
-                            <select id="productPurchasePlace" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm">
-                                <option value="">Chọn nơi mua...</option>
-                            </select>
+                            <input type="text" id="productPurchasePlace" list="placesList" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Nhập hoặc chọn nơi mua...">
+                            <datalist id="placesList"></datalist>
+                            <label class="flex items-center gap-2 mt-2 text-sm text-gray-600 cursor-pointer">
+                                <input type="checkbox" id="saveNewPlaceCheckbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                Lưu nơi mua này vào Thiết lập
+                            </label>
                         </div>
-                        <div>
+                        <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mua</label>
                             <input type="date" id="productPurchaseDate" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         </div>
@@ -654,7 +657,7 @@
             populateDropdowns() {
                 const catSelect = document.getElementById('productCategory');
                 const brandSelect = document.getElementById('productBrand');
-                const placeSelect = document.getElementById('productPurchasePlace');
+                const placeList = document.getElementById('placesList');
 
                 const currentCat = catSelect.value;
                 catSelect.innerHTML = '<option value="" disabled selected>Chọn...</option>';
@@ -670,12 +673,10 @@
                 });
                 brandSelect.value = currentBrand || '';
 
-                const currentPlace = placeSelect.value;
-                placeSelect.innerHTML = '<option value="">Chọn nơi mua...</option>';
+                placeList.innerHTML = '';
                 this.locations.forEach(l => {
-                    if(l.name) placeSelect.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+                    if(l.name) placeList.innerHTML += `<option value="${l.name}"></option>`;
                 });
-                placeSelect.value = currentPlace || '';
             }
 
             switchView(viewName) {
@@ -821,7 +822,6 @@
                         const qty = parseInt(p.quantity) || 1;
                         const catObj = this.categories.find(c => c.id === p.category);
                         const brandObj = this.brands.find(b => b.id === p.brand);
-                        const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                         
                         const catName = catObj ? catObj.name : '';
                         const brandUI = brandObj ? `<span class="text-xs text-purple-600 font-semibold inline-block bg-purple-50 px-2 py-0.5 rounded border border-purple-100 ml-2"><i class="fa-solid fa-industry"></i> ${brandObj.name}</span>` : '';
@@ -833,7 +833,7 @@
                         let metaInfo = [];
                         if(p.model) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100"><i class="fa-solid fa-microchip"></i> ${p.model}</span>`);
                         if(p.color) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-palette"></i> ${p.color}</span>`);
-                        if(placeObj && placeObj.name) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fa-solid fa-location-dot"></i> ${placeObj.name}</span>`);
+                        if(p.purchasePlace) metaInfo.push(`<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fa-solid fa-location-dot"></i> ${p.purchasePlace}</span>`);
                         
                         const metaUI = metaInfo.length > 0 ? `<div class="text-[11px] mt-2 flex flex-wrap gap-2">${metaInfo.join('')}</div>` : '';
                         const serialUI = p.serial ? `<div class="text-[11px] text-orange-600 mt-1 font-mono flex items-center gap-1">S/N: ${p.serial}</div>` : '';
@@ -877,6 +877,9 @@
                 tQCheckbox.checked = true;
                 qInput.disabled = false;
                 qInput.value = '';
+
+                document.getElementById('productPurchasePlace').value = '';
+                document.getElementById('saveNewPlaceCheckbox').checked = false;
 
                 if (id) {
                     document.getElementById('modalTitle').innerText = 'Sửa Sản Phẩm';
@@ -945,6 +948,16 @@
                     if(isNaN(finalQty) || finalQty < 1) finalQty = 1; 
                 }
 
+                const purchasePlace = document.getElementById('productPurchasePlace').value.trim();
+                const isSavePlace = document.getElementById('saveNewPlaceCheckbox').checked;
+
+                if (isSavePlace && purchasePlace) {
+                    const safeKey = this.cleanKey(purchasePlace);
+                    if (!this.locations.some(l => l.id === safeKey)) {
+                        await set(ref(this.db, 'locations/' + safeKey), { name: purchasePlace, id: safeKey });
+                    }
+                }
+
                 const productKey = code;
 
                 const productData = {
@@ -959,7 +972,7 @@
                     color: document.getElementById('productColor').value.trim(),
                     price: parseFloat(document.getElementById('productPrice').value),
                     purchaseDate: document.getElementById('productPurchaseDate').value,
-                    purchasePlace: document.getElementById('productPurchasePlace').value,
+                    purchasePlace: purchasePlace,
                     trackQuantity,
                     quantity: finalQty,
                     updatedAt: new Date().toISOString()
