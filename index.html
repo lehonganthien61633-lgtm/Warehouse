@@ -1554,32 +1554,43 @@
                     const brandObj = this.brands.find(b => b.id === p.brand);
                     const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                     
+                    // Tăng kích thước và mức độ chi tiết (High) của QR Code để khi in ra rõ nét hơn
                     const qrValue = p.sku || p.code || 'N/A';
-                    const qrBase64 = new QRious({ value: qrValue, size: 120, level: 'M' }).toDataURL();
+                    const qrBase64 = new QRious({ value: qrValue, size: 250, level: 'H' }).toDataURL('image/jpeg', 1.0);
                     
+                    // Cấu trúc HTML Nhãn Thông tin: Tăng kích thước khu vực QR Code
                     this.currentPrintHtml = `
-                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
-                            <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm; justify-content: flex-start;">
+                        <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
+                            
+                            <!-- Header có logo -->
+                            <div style="display: flex; align-items: center; border-bottom: 1px solid #000; padding-bottom: 0.5mm; margin-bottom: 1mm; justify-content: flex-start;">
                                 <svg viewBox="0 0 24 24" fill="currentColor" style="height: 3.5mm; width: 3.5mm; flex-shrink: 0; margin-right: 1mm;">
                                     <path d="M12 3L2 12h3v8h14v-8h3L12 3zm-1 6h8v5h-8V9zm-2 7h12v2H9v-2z"/>
                                 </svg>
-                                <div style="font-size: 7pt; font-weight: bold;">Bộ phận Quản lý sản phẩm</div>
+                                <div style="font-size: 7pt; font-weight: bold;">Quản lý sản phẩm</div>
                             </div>
-                            <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
+                            
+                            <!-- Tiêu đề Thông tin -->
+                            <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 1mm;">
                                 Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''}
                             </div>
-                            <div style="display: flex; flex-grow: 1; align-items: center; gap: 0.5mm; overflow: hidden;">
-                                <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal; min-width: 0;">
+                            
+                            <!-- Các dòng thông tin và QR Code được phóng to -->
+                            <div style="display: flex; flex-grow: 1; align-items: flex-start; gap: 1mm; overflow: hidden;">
+                                <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.3mm; flex-grow: 1; word-break: break-word; white-space: normal; min-width: 0;">
                                     <div><span>Tên: </span><span style="font-weight: bold;">${p.name || ''}</span></div>
                                     <div><span>Hãng: </span><span>${brandObj ? brandObj.name : ''}</span></div>
                                     <div><span>Giá: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span></div>
-                                    <div><span>SKU: </span><span>${p.sku || ''}</span></div>
+                                    <div><span>SKU: </span><span style="font-weight: bold;">${p.sku || ''}</span></div>
                                     <div><span>Nơi mua: </span><span>${placeObj ? placeObj.name : (p.purchasePlace || '')}</span></div>
                                 </div>
-                                <div style="width: 10mm; height: 10mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center;">
-                                    <img src="${qrBase64}" style="max-width: 100%; max-height: 100%; display: block;" />
+                                <!-- Tăng width/height của bao chứa QR Code lên khoảng 12-14mm (tùy thuộc không gian tem) -->
+                                <div style="width: 14mm; height: 14mm; flex-shrink: 0; display: flex; justify-content: center; align-items: center; border: 1px solid #ddd; padding: 0.5mm; border-radius: 2px;">
+                                    <img src="${qrBase64}" style="width: 100%; height: 100%; display: block; image-rendering: pixelated;" />
                                 </div>
                             </div>
+
+                            <!-- Dòng chân trang (Phân loại) -->
                             <div style="text-align: left; margin-top: auto; font-size: 6pt; font-weight: bold; border-top: 1px dashed #000; padding-top: 0.5mm;">
                                 <span>Phân loại: </span><span>${catObj ? catObj.name : ''}</span>
                             </div>
@@ -1651,27 +1662,77 @@
             async executePrint() {
                 try {
                     const container = document.getElementById('labelPreviewContainer');
+                    // Sử dụng html2canvas để render ra ảnh sắc nét
                     const canvas = await html2canvas(container, {
-                        scale: 3, 
+                        scale: 4, // Tăng scale lên 4 để chất lượng ảnh in sắc nét nhất
                         useCORS: true,
                         logging: false
                     });
                     
                     const imgData = canvas.toDataURL('image/png');
                     
-                    // Tự động tải ảnh về máy để dễ dàng chọn in trong Zlabel
-                    const a = document.createElement('a');
-                    a.href = imgData;
-                    a.download = `tem_${this.currentPrintId}_${Date.now()}.png`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
+                    // Tạo một Iframe ẩn để thực hiện lệnh in trực tiếp của hệ điều hành
+                    const iframe = document.createElement('iframe');
+                    iframe.style.position = 'absolute';
+                    iframe.style.width = '0px';
+                    iframe.style.height = '0px';
+                    iframe.style.border = 'none';
+                    document.body.appendChild(iframe);
+
+                    const doc = iframe.contentWindow.document;
+                    doc.open();
+                    // Trang in được thiết lập đúng kích thước mm và tự xoay ngang
+                    doc.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>In Nhãn</title>
+                            <style>
+                                @page {
+                                    size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
+                                    margin: 0;
+                                }
+                                body {
+                                    margin: 0;
+                                    padding: 0;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    background: #fff;
+                                }
+                                img {
+                                    width: ${this.currentPrintWidth}mm;
+                                    height: ${this.currentPrintHeight}mm;
+                                    object-fit: contain;
+                                    image-rendering: pixelated;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <img src="${imgData}" />
+                            <script>
+                                window.onload = function() {
+                                    setTimeout(() => {
+                                        window.print();
+                                    }, 300);
+                                };
+                            <\/script>
+                        </body>
+                        </html>
+                    `);
+                    doc.close();
+
+                    iframe.contentWindow.focus();
                     
-                    UI.showToast("Đã tải ảnh tem về máy! Bạn mở Zlabel để chọn ảnh in.", "success");
-                    this.closePrintPreview();
+                    // Lắng nghe sự kiện sau khi in xong (hoặc hủy in) để đóng Preview và xóa Iframe
+                    iframe.contentWindow.onafterprint = () => {
+                        document.body.removeChild(iframe);
+                        this.closePrintPreview();
+                    };
+
                 } catch (error) {
-                    console.error("Lỗi tạo ảnh in:", error);
-                    UI.showToast("Không thể tạo bản in, vui lòng thử lại.", "error");
+                    console.error("Lỗi tạo bản in:", error);
+                    UI.showToast("Không thể thực hiện lệnh in.", "error");
                 }
             }
 
