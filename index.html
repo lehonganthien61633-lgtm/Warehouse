@@ -115,7 +115,12 @@
                     </div>
 
                     <!-- Quét nhanh điều chỉnh tồn kho -->
-                    <div class="w-full sm:w-auto flex gap-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-bolt text-yellow-500"></i> Cập nhật nhanh số lượng</h3>
+                            <p class="text-sm text-gray-500 mt-1">Nhập Serial / SKU / Mã SP để xuất hoặc nhập kho.</p>
+                        </div>
+                        <div class="w-full sm:w-auto flex gap-2">
                             <input type="text" id="quickAdjustInput" class="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Nhập Serial / SKU / Mã SP...">
                             <button onclick="app.openScanner()" class="px-3 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-200 transition-colors shadow-sm flex items-center justify-center" title="Quét bằng Camera">
                                 <i class="fa-solid fa-qrcode text-lg"></i>
