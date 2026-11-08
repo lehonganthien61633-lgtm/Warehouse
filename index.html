@@ -1701,6 +1701,19 @@
                     
                     if (printWindow) {
                         // NẾU MỞ ĐƯỢC CỬA SỔ (Thường là trên Máy tính PC/Mac)
+                        
+                        // Sử dụng \x3C (dấu <) và \x2F (dấu /) để trình duyệt không hiểu lầm đây là thẻ đóng script của trang chính
+                        const scriptContent = `
+                            \x3Cscript>
+                                window.onload = function() {
+                                    setTimeout(() => {
+                                        window.print();
+                                        window.close();
+                                    }, 400);
+                                };
+                            \x3C\x2Fscript>
+                        `;
+
                         printWindow.document.write(`
                             <!DOCTYPE html>
                             <html>
@@ -1729,14 +1742,7 @@
                                 </head>
                                 <body>
                                     ${this.currentPrintHtml}
-                                    <script type="text/javascript">
-                                        window.onload = function() {
-                                            setTimeout(() => {
-                                                window.print();
-                                                window.close();
-                                            }, 400);
-                                        };
-                                    </scr` + `ipt>
+                                    ${scriptContent}
                                 </body>
                             </html>
                         `);
@@ -1764,7 +1770,6 @@
                     UI.showToast("Không thể thực hiện lệnh in.", "error");
                 }
             }
-
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new WMSApp();
         });
