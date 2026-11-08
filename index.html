@@ -1701,23 +1701,21 @@
                     
                     if (printWindow) {
                         // NẾU MỞ ĐƯỢC CỬA SỔ (Thường là trên Máy tính PC/Mac)
-                        // In trực tiếp bằng HTML thay vì quy ra ảnh, chữ sẽ nét 100% (Vector)
-                        // Có lệnh @page để ép trình duyệt tự xóa lề và tiêu đề mặc định
                         printWindow.document.write(`
                             <!DOCTYPE html>
                             <html>
                                 <head>
                                     <title>In Nhãn</title>
                                     <style>
-                                        /* Ép kích thước trang và xóa bỏ margin/header/footer của trình duyệt */
+                                        /* Ép đúng kích thước WxH, BỎ chữ landscape để máy in nhiệt không bị xoay nhầm hướng */
                                         @page {
-                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
+                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm;
                                             margin: 0 !important;
                                         }
                                         body {
                                             margin: 0;
                                             padding: 0;
-                                            background: #fff;
+                                            background: none; /* Màu nền none theo yêu cầu */
                                             display: flex;
                                             justify-content: center;
                                             align-items: center;
@@ -1731,7 +1729,7 @@
                                 </head>
                                 <body>
                                     ${this.currentPrintHtml}
-                                    <script>
+                                    <script type="text/javascript">
                                         window.onload = function() {
                                             setTimeout(() => {
                                                 window.print();
@@ -1745,7 +1743,6 @@
                         printWindow.document.close();
                     } else {
                         // NẾU BỊ CHẶN POPUP (Thường là trên Điện thoại iOS/Safari)
-                        // Fallback: Dùng html2canvas tạo ảnh nét gấp 4 lần và tải về để in qua App Bluetooth (ZLabel)
                         const container = document.getElementById('labelPreviewContainer');
                         const canvas = await html2canvas(container, {
                             scale: 4, 
