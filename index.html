@@ -627,7 +627,6 @@
             }
 
             async initApp() {
-                // Timeout an toàn 5s phòng khi mạng chậm hoặc bảng chưa tạo
                 setTimeout(() => {
                     const loadingScreen = document.getElementById('loading-screen');
                     if (loadingScreen && loadingScreen.style.display !== 'none') {
@@ -757,16 +756,6 @@
                     }
                 });
                 
-                document.getElementById('productCategory').addEventListener('change', (e) => {
-                    const id = document.getElementById('productId').value;
-                    if (!id && e.target.value) {
-                        const catObj = this.categories.find(c => c.id === e.target.value);
-                        if(catObj) {
-                            document.getElementById('productCode').value = this.generateProductCode(catObj.prefix);
-                        }
-                    }
-                });
-                
                 const fillOldDataIfExist = (val, field) => {
                     if(!val) return;
                     if(document.getElementById('productId').value) return; 
@@ -774,8 +763,17 @@
                     const oldProduct = this.products.find(p => p[field] === val);
                     if(oldProduct) {
                         if(oldProduct.name && !document.getElementById('productName').value) document.getElementById('productName').value = oldProduct.name;
-                        if(oldProduct.category && !document.getElementById('productCategory').value) document.getElementById('productCategory').value = oldProduct.category;
-                        if(oldProduct.brand && !document.getElementById('productBrand').value) document.getElementById('productBrand').value = oldProduct.brand;
+                        
+                        if(oldProduct.category && !document.getElementById('productCategoryInput').value) {
+                            const cat = this.categories.find(c => c.id === oldProduct.category);
+                            document.getElementById('productCategoryInput').value = cat ? cat.name : oldProduct.category;
+                        }
+
+                        if(oldProduct.brand && !document.getElementById('productBrandInput').value) {
+                            const brand = this.brands.find(b => b.id === oldProduct.brand);
+                            document.getElementById('productBrandInput').value = brand ? brand.name : oldProduct.brand;
+                        }
+
                         if(oldProduct.model && !document.getElementById('productModel').value) document.getElementById('productModel').value = oldProduct.model;
                         if(oldProduct.color && !document.getElementById('productColor').value) document.getElementById('productColor').value = oldProduct.color;
                         if(oldProduct.price && !document.getElementById('productPrice').value) document.getElementById('productPrice').value = oldProduct.price;
@@ -900,24 +898,20 @@
             }
 
             switchConfigTab(tabName) {
-                // Reset giao diện các nút Tab
                 document.querySelectorAll('.config-tab-btn').forEach(btn => {
                     btn.className = 'config-tab-btn bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 p-4 rounded-xl shadow-sm text-center transition-all hover:shadow-md font-medium';
                 });
                 
-                // Highlight nút Tab đang được chọn
                 const activeBtn = document.getElementById(`tab-${tabName}`);
                 if (activeBtn) {
                     activeBtn.className = 'config-tab-btn bg-blue-50 border border-blue-200 text-blue-700 p-4 rounded-xl shadow-sm text-center transition-all hover:shadow-md font-bold';
                 }
 
-                // Ẩn tất cả các bảng (Panel)
                 document.querySelectorAll('.config-panel').forEach(panel => {
                     panel.classList.add('hidden');
                     panel.classList.remove('block');
                 });
                 
-                // Chỉ hiển thị bảng tương ứng
                 const activePanel = document.getElementById(`panel-${tabName}`);
                 if (activePanel) {
                     activePanel.classList.remove('hidden');
@@ -1123,6 +1117,8 @@
                 document.getElementById('productOldCode').value = '';
                 document.getElementById('productCode').value = '';
                 document.getElementById('productSku').value = '';
+                document.getElementById('productCategoryInput').value = '';
+                document.getElementById('productBrandInput').value = '';
                 
                 const tQCheckbox = document.getElementById('toggleQuantity');
                 const qInput = document.getElementById('productQuantity');
@@ -1146,11 +1142,6 @@
                         const brand = this.brands.find(b => b.id === p.brand);
                         document.getElementById('productBrandInput').value = brand ? brand.name : (p.brand || '');
                         
-                        document.getElementById('productCode').value = p.code || '';
-                        document.getElementById('productId').value = p.id;
-                        document.getElementById('productOldCode').value = p.code;
-                        document.getElementById('productCategory').value = p.category || '';
-                        document.getElementById('productBrand').value = p.brand || '';
                         document.getElementById('productCode').value = p.code || '';
                         document.getElementById('productSku').value = p.sku || '';
                         document.getElementById('productName').value = p.name || '';
@@ -1247,10 +1238,10 @@
                     color: document.getElementById('productColor').value.trim(),
                     price: parseFloat(document.getElementById('productPrice').value),
                     purchaseDate: document.getElementById('productPurchaseDate').value,
-                    purchasePlace: purchasePlace,
-                    hasBox: hasBox,
-                    trackQuantity,
-                    quantity: finalQty,
+                    purchasePlace: document.getElementById('productPurchasePlace').value.trim(),
+                    hasBox: document.getElementById('productHasBox').checked,
+                    trackQuantity: document.getElementById('toggleQuantity').checked,
+                    quantity: document.getElementById('toggleQuantity').checked ? (parseInt(document.getElementById('productQuantity').value, 10) || 1) : 1,
                     updatedAt: new Date().toISOString()
                 };
 
@@ -1700,24 +1691,31 @@
                     const printWindow = window.open('', '_blank');
                     
                     if (printWindow) {
-                        // NẾU MỞ ĐƯỢC CỬA SỔ (Thường là trên Máy tính PC/Mac)
-                        // In trực tiếp bằng HTML thay vì quy ra ảnh, chữ sẽ nét 100% (Vector)
-                        // Có lệnh @page để ép trình duyệt tự xóa lề và tiêu đề mặc định
+                        const scriptContent = `
+                            \x3Cscript>
+                                window.onload = function() {
+                                    setTimeout(() => {
+                                        window.print();
+                                        window.close();
+                                    }, 400);
+                                };
+                            \x3C\x2Fscript>
+                        `;
+
                         printWindow.document.write(`
                             <!DOCTYPE html>
                             <html>
                                 <head>
                                     <title>In Nhãn</title>
                                     <style>
-                                        /* Ép kích thước trang và xóa bỏ margin/header/footer của trình duyệt */
                                         @page {
-                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
+                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm;
                                             margin: 0 !important;
                                         }
                                         body {
                                             margin: 0;
                                             padding: 0;
-                                            background: #fff;
+                                            background: none;
                                             display: flex;
                                             justify-content: center;
                                             align-items: center;
@@ -1731,21 +1729,12 @@
                                 </head>
                                 <body>
                                     ${this.currentPrintHtml}
-                                    <script>
-                                        window.onload = function() {
-                                            setTimeout(() => {
-                                                window.print();
-                                                window.close();
-                                            }, 400);
-                                        };
-                                    <\/script>
+                                    ${scriptContent}
                                 </body>
                             </html>
                         `);
                         printWindow.document.close();
                     } else {
-                        // NẾU BỊ CHẶN POPUP (Thường là trên Điện thoại iOS/Safari)
-                        // Fallback: Dùng html2canvas tạo ảnh nét gấp 4 lần và tải về để in qua App Bluetooth (ZLabel)
                         const container = document.getElementById('labelPreviewContainer');
                         const canvas = await html2canvas(container, {
                             scale: 4, 
