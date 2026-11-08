@@ -1686,7 +1686,7 @@
                 setTimeout(() => m.classList.add('hidden'), 300);
             }
 
-            async executePrint() {
+async executePrint() {
                 try {
                     const printWindow = window.open('', '_blank');
                     
@@ -1708,8 +1708,12 @@
                                 <head>
                                     <title>In Nhãn</title>
                                     <style>
+                                        /* 
+                                         * SỬ DỤNG CHỮ LANDSCAPE ĐỂ ÉP KHỔ NGANG.
+                                         * Trình duyệt sẽ tự động đặt Rộng 40 x Cao 30 (hoặc Rộng 50 x Cao 30).
+                                         */
                                         @page {
-                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm;
+                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
                                             margin: 0 !important;
                                         }
                                         body {
@@ -1719,8 +1723,7 @@
                                             display: flex;
                                             justify-content: center;
                                             align-items: center;
-                                            width: ${this.currentPrintWidth}mm;
-                                            height: ${this.currentPrintHeight}mm;
+                                            /* BỎ KÍCH THƯỚC CHIỀU RỘNG/CAO CỦA BODY TRÁNH TRÌNH DUYỆT XOAY LẦN 2 */
                                             -webkit-print-color-adjust: exact;
                                             print-color-adjust: exact;
                                         }
