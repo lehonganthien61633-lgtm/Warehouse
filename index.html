@@ -1701,34 +1701,23 @@
                     
                     if (printWindow) {
                         // NẾU MỞ ĐƯỢC CỬA SỔ (Thường là trên Máy tính PC/Mac)
-                        
-                        // Sử dụng \x3C (dấu <) và \x2F (dấu /) để trình duyệt không hiểu lầm đây là thẻ đóng script của trang chính
-                        const scriptContent = `
-                            \x3Cscript>
-                                window.onload = function() {
-                                    setTimeout(() => {
-                                        window.print();
-                                        window.close();
-                                    }, 400);
-                                };
-                            \x3C\x2Fscript>
-                        `;
-
+                        // In trực tiếp bằng HTML thay vì quy ra ảnh, chữ sẽ nét 100% (Vector)
+                        // Có lệnh @page để ép trình duyệt tự xóa lề và tiêu đề mặc định
                         printWindow.document.write(`
                             <!DOCTYPE html>
                             <html>
                                 <head>
                                     <title>In Nhãn</title>
                                     <style>
-                                        /* Ép đúng kích thước WxH, BỎ chữ landscape để máy in nhiệt không bị xoay nhầm hướng */
+                                        /* Ép kích thước trang và xóa bỏ margin/header/footer của trình duyệt */
                                         @page {
-                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm;
+                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
                                             margin: 0 !important;
                                         }
                                         body {
                                             margin: 0;
                                             padding: 0;
-                                            background: none; /* Màu nền none theo yêu cầu */
+                                            background: #fff;
                                             display: flex;
                                             justify-content: center;
                                             align-items: center;
@@ -1742,13 +1731,21 @@
                                 </head>
                                 <body>
                                     ${this.currentPrintHtml}
-                                    ${scriptContent}
+                                    <script>
+                                        window.onload = function() {
+                                            setTimeout(() => {
+                                                window.print();
+                                                window.close();
+                                            }, 400);
+                                        };
+                                    <\/script>
                                 </body>
                             </html>
                         `);
                         printWindow.document.close();
                     } else {
                         // NẾU BỊ CHẶN POPUP (Thường là trên Điện thoại iOS/Safari)
+                        // Fallback: Dùng html2canvas tạo ảnh nét gấp 4 lần và tải về để in qua App Bluetooth (ZLabel)
                         const container = document.getElementById('labelPreviewContainer');
                         const canvas = await html2canvas(container, {
                             scale: 4, 
@@ -1770,6 +1767,8 @@
                     UI.showToast("Không thể thực hiện lệnh in.", "error");
                 }
             }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new WMSApp();
         });
