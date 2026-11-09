@@ -544,11 +544,12 @@
                 </div>
                 
                 <!-- Cấu hình Nhãn Thông tin -->
-                <div id="printInfoConfig">
-                    <label class="flex items-center gap-2 mt-2 text-sm text-gray-700 cursor-pointer">
-                        <input type="checkbox" id="printBoxLabel" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                        In nhãn cho vỏ hộp (Hiển thị "Vỏ hộp")
-                    </label>
+                <div id="printInfoConfig" class="space-y-2 mt-2">
+                    <label class="block text-sm font-medium text-gray-700">Chọn nội dung cần in</label>
+                    <select id="printTarget" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <option value="main">Sản phẩm chính</option>
+                        <!-- Phụ kiện sẽ tự động xuất hiện ở đây -->
+                    </select>
                 </div>
 
                 <!-- Cấu hình Nhãn Niêm phong -->
@@ -1527,8 +1528,19 @@
 
             openPrintSettings(id) {
                 this.currentPrintId = id;
-                document.getElementById('printBoxLabel').checked = false;
                 document.getElementById('printSealLocation').value = '';
+                
+                // Nạp danh sách phụ kiện vào dropdown chọn nhãn in
+                const p = this.products.find(x => x.id === id);
+                const printTarget = document.getElementById('printTarget');
+                if (printTarget) {
+                    printTarget.innerHTML = '<option value="main">Sản phẩm chính</option>';
+                    if (p && p.accessories && p.accessories.length > 0) {
+                        p.accessories.forEach(acc => {
+                            printTarget.innerHTML += `<option value="${acc}">Phụ kiện: ${acc}</option>`;
+                        });
+                    }
+                }
                 
                 const typeRadios = document.getElementsByName('printType');
                 typeRadios[0].checked = true;
@@ -1567,14 +1579,25 @@
                 const [w, h] = sizeVal.split('x');
                 this.currentPrintWidth = parseInt(w);
                 this.currentPrintHeight = parseInt(h);
-                
-                if (printType === 'info') {
-                    this.currentPrintIsBox = document.getElementById('printBoxLabel').checked;
+               if (printType === 'info') {
+                    const printTargetVal = document.getElementById('printTarget') ? document.getElementById('printTarget').value : 'main';
+                    const isAccessory = printTargetVal !== 'main';
+                    
                     const catObj = this.categories.find(c => c.id === p.category);
                     const brandObj = this.brands.find(b => b.id === p.brand);
                     const placeObj = this.locations.find(l => l.id === p.purchasePlace);
                     
-                    const pKienStr = (p.accessories && p.accessories.length > 0) ? `(Kèm ${p.accessories.length} phụ kiện)` : '';
+                    let titleStr = "Thông tin sản phẩm";
+                    let productNameStr = p.name || '';
+                    
+                    // Xử lý tiêu đề và tên nếu chọn in Phụ Kiện
+                    if (isAccessory) {
+                        titleStr = "Thông tin phụ kiện";
+                        productNameStr = `${printTargetVal} (Kèm ${p.name})`;
+                    } else {
+                        const pKienStr = (p.accessories && p.accessories.length > 0) ? `(Kèm ${p.accessories.length} phụ kiện)` : '';
+                        titleStr = `Thông tin sản phẩm ${pKienStr}`;
+                    }
 
                     this.currentPrintHtml = `
                         <div style="font-family: Arial, sans-serif; color: #000; display: flex; flex-direction: column; width: ${this.currentPrintWidth}mm; height: ${this.currentPrintHeight}mm; padding: 1mm 1mm 1mm 0.5mm; background: #fff; box-sizing: border-box; overflow: hidden; line-height: 1.1; text-align: left;">
@@ -1588,11 +1611,11 @@
                             </div>
                             
                             <div style="font-size: 6.5pt; font-weight: bold; margin-bottom: 0.5mm;">
-                                Thông tin sản phẩm ${this.currentPrintIsBox ? '(Vỏ hộp)' : ''} ${pKienStr}
+                                ${titleStr}
                             </div>
                             
                             <div style="font-size: 6pt; display: flex; flex-direction: column; gap: 0.2mm; flex-grow: 1; word-break: break-word; white-space: normal;">
-                                <div><span>Tên sản phẩm: </span><span>${p.name || ''}</span></div>
+                                <div><span>Tên: </span><span style="font-weight: bold;">${productNameStr}</span></div>
                                 <div><span>Hãng sản xuất: </span><span>${brandObj ? brandObj.name : ''}</span></div>
                                 <div><span>Giá tiền: </span><span>${UI.formatCurrency(p.price || 0).replace('₫', 'đ')}</span></div>
                                 <div><span>SKU: </span><span>${p.sku || ''}</span></div>
@@ -1682,7 +1705,7 @@
                                     <title>In Nhãn</title>
                                     <style>
                                         @page {
-                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm landscape;
+                                            size: ${this.currentPrintWidth}mm ${this.currentPrintHeight}mm;
                                             margin: 0 !important;
                                         }
                                         body {
