@@ -68,7 +68,7 @@
                 </div>
             </header>
 
-            <div class="p-6 max-w-7xl mx-auto">
+            <div class="p-6 max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden">
                 
                 <!-- VIEW: DASHBOARD -->
                 <div id="view-dashboard" class="space-y-6 h-full overflow-y-auto no-scrollbar pb-10">
@@ -199,7 +199,7 @@
                 </div>
 
                 <!-- VIEW: CONFIGURATION (Thiết lập: Categories, Brands, Locations, Seal Locations) -->
-                <div id="view-categories" class="hidden space-y-6">
+                <div id="view-categories" class="hidden space-y-6 h-full overflow-y-auto no-scrollbar pb-10">
                     
                     <!-- Các ô bấm chọn (Tabs) -->
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 shrink-0">
@@ -933,15 +933,18 @@
                 ['dashboard', 'products', 'categories'].forEach(v => {
                     const el = document.getElementById(`view-${v}`);
                     if(el) {
-                        el.style.display = 'none';
+                        el.style.display = ''; // Trả về mặc định, xóa lỗi kẹt ẩn
                         el.classList.add('hidden');
+                        el.classList.remove('flex');
                     }
                 });
                 
                 const showEl = document.getElementById(`view-${viewName}`);
                 if (showEl) {
                     showEl.classList.remove('hidden');
-                    if (viewName === 'products') showEl.style.display = 'flex';
+                    if (viewName === 'products') {
+                        showEl.classList.add('flex'); // Dùng class của Tailwind thay vì style cứng
+                    }
                 }
 
                 const titles = { 'dashboard': 'Bảng điều khiển', 'products': 'Quản lý sản phẩm', 'categories': 'Thiết lập' };
