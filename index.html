@@ -1593,7 +1593,7 @@
                     // Xử lý tiêu đề và tên nếu chọn in Phụ Kiện
                     if (isAccessory) {
                         titleStr = "Thông tin phụ kiện";
-                        productNameStr = `${printTargetVal} (Kèm ${p.name})`;
+                        productNameStr = `${p.name || ''} (${printTargetVal})`;
                     } else {
                         const pKienStr = (p.accessories && p.accessories.length > 0) ? `(Kèm ${p.accessories.length} phụ kiện)` : '';
                         titleStr = `Thông tin sản phẩm ${pKienStr}`;
